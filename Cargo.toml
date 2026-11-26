@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = ["crates/sp-core", "crates/softprojector"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["SoftProjector contributors", "Rust port contributors"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

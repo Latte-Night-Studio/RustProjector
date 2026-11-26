@@ -1,0 +1,18 @@
+[package]
+name = "sp-core"
+description = "Core data model, database and import/export layer for the SoftProjector Rust port"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror = "2"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+regex = "1"
+quick-xml = "0.36"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "webp", "tiff"] }
+
+[dev-dependencies]
+tempfile = "3"
