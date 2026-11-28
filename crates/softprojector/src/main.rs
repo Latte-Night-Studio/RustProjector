@@ -12,6 +12,7 @@ mod settings_ui;
 mod slideshows_ui;
 mod songs_ui;
 mod themes_ui;
+mod updater;
 mod widgets;
 
 use eframe::egui;
@@ -33,7 +34,7 @@ fn main() -> eframe::Result<()> {
             let app =
                 app::App::new(cc).map_err(|err| -> Box<dyn std::error::Error + Send + Sync> {
                     Box::new(std::io::Error::other(format!(
-                        "Could not open the SoftProjector database: {err}"
+                        "Не вдалося відкрити базу даних SoftProjector: {err}"
                     )))
                 })?;
             Ok(Box::new(app))

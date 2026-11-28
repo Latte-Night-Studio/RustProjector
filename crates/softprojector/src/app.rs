@@ -95,6 +95,7 @@ pub struct App {
     pub last_video: Option<(String, usize, String)>,
     pub images: ImageCache,
     pub monitors: Vec<(i32, i32, i32, i32)>,
+    pub update: crate::updater::UpdateState,
 }
 
 impl App {
@@ -161,8 +162,10 @@ impl App {
             last_video: None,
             images: ImageCache::default(),
             monitors: widgets::monitor_rects(),
+            update: crate::updater::UpdateState::default(),
         };
         app.reload_all();
+        app.update.check_at_startup();
         Ok(app)
     }
 
@@ -203,32 +206,32 @@ impl App {
                     self.selected_song = self.songs.first().map(|s| s.song_id).unwrap_or(0);
                 }
             }
-            Err(err) => self.set_error("Could not load songs", err),
+            Err(err) => self.set_error("Не вдалося завантажити пісні", err),
         }
         match Songbook::load_all(&self.db) {
             Ok(books) => self.songbooks = books,
-            Err(err) => self.set_error("Could not load songbooks", err),
+            Err(err) => self.set_error("Не вдалося завантажити збірники", err),
         }
     }
 
     pub fn reload_announcements(&mut self) {
         match Announcement::load_all(&self.db) {
             Ok(list) => self.announcements = list,
-            Err(err) => self.set_error("Could not load announcements", err),
+            Err(err) => self.set_error("Не вдалося завантажити оголошення", err),
         }
     }
 
     pub fn reload_slideshows(&mut self) {
         match SlideShow::load_all(&self.db) {
             Ok(list) => self.slideshow_infos = list,
-            Err(err) => self.set_error("Could not load slideshows", err),
+            Err(err) => self.set_error("Не вдалося завантажити слайд-шоу", err),
         }
     }
 
     pub fn reload_media(&mut self) {
         match MediaItem::load_all(&self.db) {
             Ok(list) => self.media = list,
-            Err(err) => self.set_error("Could not load media", err),
+            Err(err) => self.set_error("Не вдалося завантажити медіа", err),
         }
         self.selected_media = self.selected_media.min(self.media.len().saturating_sub(1));
     }
@@ -236,7 +239,7 @@ impl App {
     pub fn reload_themes(&mut self) {
         match Theme::list(&self.db) {
             Ok(list) => self.theme_infos = list,
-            Err(err) => self.set_error("Could not load themes", err),
+            Err(err) => self.set_error("Не вдалося завантажити теми", err),
         }
     }
 
@@ -260,7 +263,7 @@ impl App {
                         .unwrap_or(0);
                 }
             }
-            Err(err) => self.set_error("Could not load Bible versions", err),
+            Err(err) => self.set_error("Не вдалося завантажити версії Біблії", err),
         }
     }
 
@@ -285,7 +288,7 @@ impl App {
                 self.bible_session = Some(session);
             }
             Ok(None) => self.bible_session = None,
-            Err(err) => self.set_error("Could not load Bible", err),
+            Err(err) => self.set_error("Не вдалося завантажити Біблію", err),
         }
     }
 
@@ -306,7 +309,7 @@ impl App {
             Err(err) => {
                 self.current_slideshow = None;
                 self.slideshow_loaded_id = 0;
-                self.set_error("Could not load slideshow", err);
+                self.set_error("Не вдалося завантажити слайд-шоу", err);
             }
         }
     }
@@ -325,11 +328,11 @@ impl App {
                 self.theme = theme;
                 self.settings.general.current_theme_id = self.theme.theme_id;
                 if let Err(err) = self.settings.save(&self.db) {
-                    self.set_error("Could not save settings", err);
+                    self.set_error("Не вдалося зберегти налаштування", err);
                 }
                 self.images.clear();
             }
-            Err(err) => self.set_error("Could not load theme", err),
+            Err(err) => self.set_error("Не вдалося завантажити тему", err),
         }
     }
 
@@ -340,11 +343,11 @@ impl App {
         index: usize,
     ) {
         if slides.is_empty() {
-            self.set_error("Nothing to project", "the presentation has no slides");
+            self.set_error("Нічого проєктувати", "презентація не містить слайдів");
             return;
         }
         let source = source.into();
-        self.status = format!("Projecting {source} ({} slides)", slides.len());
+        self.status = format!("Проєктується {source} (слайдів: {})", slides.len());
         self.presentation = Presentation::new(source, slides);
         self.presentation.index = index.min(self.presentation.slides.len() - 1);
         self.presentation.black = false;
@@ -407,45 +410,46 @@ impl App {
     fn top_bar(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("menu").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Import songbook...").clicked() {
+                ui.menu_button("Файл", |ui| {
+                    if ui.button("Імпортувати збірник...").clicked() {
                         ui.close_menu();
                         self.import_songbook_dialog();
                     }
-                    if ui.button("Export current songbook...").clicked() {
+                    if ui.button("Експортувати поточний збірник...").clicked()
+                    {
                         ui.close_menu();
                         self.export_songbook_dialog();
                     }
                     ui.separator();
-                    if ui.button("Import Bible...").clicked() {
+                    if ui.button("Імпортувати Біблію...").clicked() {
                         ui.close_menu();
                         self.import_bible_dialog();
                     }
                     ui.separator();
-                    if ui.button("Import themes...").clicked() {
+                    if ui.button("Імпортувати теми...").clicked() {
                         ui.close_menu();
                         self.import_themes_dialog();
                     }
-                    if ui.button("Export all themes...").clicked() {
+                    if ui.button("Експортувати всі теми...").clicked() {
                         ui.close_menu();
                         self.export_themes_dialog();
                     }
                     ui.separator();
-                    if ui.button("Open schedule...").clicked() {
+                    if ui.button("Відкрити розклад...").clicked() {
                         ui.close_menu();
                         self.open_schedule_dialog();
                     }
-                    if ui.button("Save schedule...").clicked() {
+                    if ui.button("Зберегти розклад...").clicked() {
                         ui.close_menu();
                         self.save_schedule_dialog();
                     }
                     ui.separator();
-                    if ui.button("Quit").clicked() {
+                    if ui.button("Вихід").clicked() {
                         ctx.send_viewport_cmd(ViewportCommand::Close);
                     }
                 });
-                ui.menu_button("Help", |ui| {
-                    if ui.button("About SoftProjector").clicked() {
+                ui.menu_button("Довідка", |ui| {
+                    if ui.button("Про SoftProjector").clicked() {
                         self.about_open = true;
                         ui.close_menu();
                     }
@@ -454,20 +458,20 @@ impl App {
                 ui.label(egui::RichText::new("SoftProjector").strong());
                 ui.label(format!("v{}", sp_core::APP_VERSION));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(format!("DB: {}", self.db.path().display()));
+                    ui.label(format!("БД: {}", self.db.path().display()));
                 });
             });
 
             ui.horizontal(|ui| {
                 for (tab, label) in [
-                    (Tab::Songs, "Songs"),
-                    (Tab::Bible, "Bible"),
-                    (Tab::Announcements, "Announcements"),
-                    (Tab::Slideshows, "Slideshows"),
-                    (Tab::Media, "Media"),
-                    (Tab::Schedule, "Schedule"),
-                    (Tab::Themes, "Themes"),
-                    (Tab::Settings, "Settings"),
+                    (Tab::Songs, "Пісні"),
+                    (Tab::Bible, "Біблія"),
+                    (Tab::Announcements, "Оголошення"),
+                    (Tab::Slideshows, "Слайд-шоу"),
+                    (Tab::Media, "Медіа"),
+                    (Tab::Schedule, "Розклад"),
+                    (Tab::Themes, "Теми"),
+                    (Tab::Settings, "Налаштування"),
                 ] {
                     if ui.selectable_label(self.tab == tab, label).clicked() {
                         self.tab = tab;
@@ -480,9 +484,9 @@ impl App {
             ui.horizontal_wrapped(|ui| {
                 if ui
                     .button(if self.projector_open {
-                        "📺 Projector on"
+                        "📺 Проєктор увімкнено"
                     } else {
-                        "📺 Start projector"
+                        "📺 Запустити проєктор"
                     })
                     .clicked()
                 {
@@ -492,7 +496,7 @@ impl App {
                     }
                 }
                 if ui
-                    .checkbox(&mut self.projector_fullscreen, "Fullscreen")
+                    .checkbox(&mut self.projector_fullscreen, "На весь екран")
                     .changed()
                 {
                     ctx.send_viewport_cmd_to(
@@ -501,22 +505,22 @@ impl App {
                     );
                 }
                 let mut black = self.presentation.black;
-                if ui.checkbox(&mut black, "Black screen").changed() {
+                if ui.checkbox(&mut black, "Чорний екран").changed() {
                     self.presentation.black = black;
                 }
                 ui.separator();
-                if ui.button("⏮").on_hover_text("Previous slide").clicked() {
+                if ui.button("⏮").on_hover_text("Попередній слайд").clicked() {
                     self.presentation.previous();
                 }
-                if ui.button("⏭").on_hover_text("Next slide").clicked() {
+                if ui.button("⏭").on_hover_text("Наступний слайд").clicked() {
                     self.presentation.next();
                 }
-                if ui.button("⏹").on_hover_text("Stop projection").clicked() {
+                if ui.button("⏹").on_hover_text("Зупинити проєкцію").clicked() {
                     self.stop_projection();
                 }
                 ui.separator();
                 if self.presentation.is_empty() {
-                    ui.label("Nothing is being projected");
+                    ui.label("Нічого не проєктується");
                 } else {
                     ui.label(
                         egui::RichText::new(format!(
@@ -539,7 +543,7 @@ impl App {
             ui.horizontal(|ui| {
                 if let Some(error) = self.error.clone() {
                     ui.label(egui::RichText::new(error).color(egui::Color32::LIGHT_RED));
-                    if ui.small_button("Dismiss").clicked() {
+                    if ui.small_button("Закрити").clicked() {
                         self.error = None;
                     }
                 } else {
@@ -547,12 +551,119 @@ impl App {
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(format!(
-                        "Theme: {} | Display {}",
+                        "Тема: {} | Дисплей {}",
                         self.theme.name, self.theme_display
                     ));
                 });
             });
         });
+    }
+
+    fn update_bar(&mut self, ctx: &egui::Context) {
+        if self.update.dismissed {
+            return;
+        }
+        let visible = self.update.downloading
+            || self.update.ready.is_some()
+            || self.update.info.is_some()
+            || self.update.error.is_some();
+        if !visible {
+            return;
+        }
+
+        let mut check = false;
+        let mut download = false;
+        let mut install = false;
+        let mut dismiss = false;
+        let mut open_release = false;
+
+        egui::TopBottomPanel::bottom("update_bar").show(ctx, |ui| {
+            ui.horizontal_wrapped(|ui| {
+                if self.update.downloading {
+                    ui.spinner();
+                    ui.label("Завантаження оновлення…");
+                    return;
+                }
+                if self.update.ready.is_some() {
+                    ui.label(
+                        egui::RichText::new("Оновлення завантажено.")
+                            .color(egui::Color32::LIGHT_GREEN),
+                    );
+                    if ui.button("Перезапустити та встановити").clicked() {
+                        install = true;
+                    }
+                    if ui.button("Пізніше").clicked() {
+                        dismiss = true;
+                    }
+                    return;
+                }
+                if let Some(error) = self.update.error.clone() {
+                    ui.label(
+                        egui::RichText::new(format!("Помилка оновлення: {error}"))
+                            .color(egui::Color32::LIGHT_RED),
+                    );
+                    if ui.button("Повторити").clicked() {
+                        if self.update.info.is_some() {
+                            download = true;
+                        } else {
+                            check = true;
+                        }
+                    }
+                    if ui.button("Закрити").clicked() {
+                        dismiss = true;
+                    }
+                    return;
+                }
+                if let Some(info) = self.update.info.clone() {
+                    ui.label(
+                        egui::RichText::new(format!("Доступне оновлення v{}.", info.version))
+                            .strong(),
+                    );
+                    if ui.button("Оновити").clicked() {
+                        download = true;
+                    }
+                    if ui
+                        .button("Що нового?")
+                        .on_hover_text(&info.page_url)
+                        .clicked()
+                    {
+                        open_release = true;
+                    }
+                    if ui.button("Пізніше").clicked() {
+                        dismiss = true;
+                    }
+                    return;
+                }
+            });
+        });
+
+        if open_release {
+            if let Some(info) = &self.update.info {
+                widgets::open_external(&info.page_url);
+            }
+        }
+        if check {
+            self.update.check_now();
+        }
+        if download {
+            self.update.download();
+        }
+        if dismiss {
+            self.update.dismissed = true;
+        }
+        if install {
+            if let Some(path) = self.update.ready.clone() {
+                match crate::updater::launch_installer(&path) {
+                    Ok(()) => {
+                        self.projector_open = false;
+                        ctx.send_viewport_cmd(ViewportCommand::Close);
+                    }
+                    Err(error) => {
+                        self.set_error("Не вдалося встановити оновлення", error);
+                    }
+                }
+            }
+        }
     }
 
     fn projector_window(&mut self, ctx: &egui::Context) {
@@ -565,7 +676,7 @@ impl App {
             .get(self.settings.general.display_screen.max(0) as usize)
             .copied();
         let mut builder = ViewportBuilder::default()
-            .with_title("SoftProjector Projection")
+            .with_title("Проєкція SoftProjector")
             .with_decorations(false)
             .with_inner_size([1280.0, 720.0])
             .with_min_inner_size([320.0, 240.0]);
@@ -633,20 +744,18 @@ impl App {
             return;
         }
         let mut open = self.about_open;
-        egui::Window::new("About SoftProjector")
+        egui::Window::new("Про SoftProjector")
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
             .show(ctx, |ui| {
-                ui.heading("SoftProjector — Rust port");
-                ui.label(format!("Version {}", sp_core::APP_VERSION));
+                ui.heading("SoftProjector — Rust-версія");
+                ui.label(format!("Версія {}", sp_core::APP_VERSION));
                 ui.separator();
-                ui.label(
-                    "A Rust reimplementation of the SoftProjector 2 church projection application.",
-                );
-                ui.label("Database schema version 2, compatible with spData.sqlite.");
-                ui.label(format!("Database: {}", self.db.path().display()));
-                ui.label("Icons: egui default fonts. System font: Arial when available.");
+                ui.label("Rust-реалізація церковної програми проєкції SoftProjector 2.");
+                ui.label("Схема бази даних версії 2, сумісна з spData.sqlite.");
+                ui.label(format!("База даних: {}", self.db.path().display()));
+                ui.label("Іконки: стандартні шрифти egui. Системний шрифт: Arial, якщо доступний.");
             });
         self.about_open = open;
     }
@@ -656,10 +765,12 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_auto_advance(ctx.input(|i| i.time));
         self.poll_video();
+        self.update.poll();
         self.ensure_bible_session();
         self.ensure_slideshow_loaded();
 
         self.top_bar(ctx);
+        self.update_bar(ctx);
         self.status_bar(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| match self.tab {

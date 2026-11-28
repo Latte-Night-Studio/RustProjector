@@ -55,11 +55,68 @@ pub const CATEGORIES: &[&str] = &[
     "Christian Joy",
 ];
 
+/// Ukrainian names of the song categories, in the same order as [`CATEGORIES`].
+pub const CATEGORIES_UK: &[&str] = &[
+    "Інше",
+    "Біблійні історії",
+    "Євангеліє",
+    "Бог, Його любов і велич",
+    "Воскресіння Христа",
+    "Час",
+    "Друге пришестя Христа і суд",
+    "Діти та сім'я",
+    "Для новонавернених",
+    "Духовна боротьба і перемога",
+    "Жнива",
+    "Ісус Христос",
+    "Любов",
+    "Мати",
+    "Молитва",
+    "Молодь",
+    "Весілля",
+    "Захід / схід сонця",
+    "Хрещення",
+    "Новий рік",
+    "Похорон",
+    "На рукопокладенні",
+    "Про Господню вечерю",
+    "Небесна оселя",
+    "Настанова і самоперевірка",
+    "Святий Дух",
+    "Церква",
+    "Перед богослужінням",
+    "Останні дні",
+    "Практичне життя з Богом",
+    "Після богослужіння",
+    "Вітання і прощання",
+    "Заклик до праці",
+    "Заклик до покаяння",
+    "Шлях віри, віра і надія",
+    "Різні християнські свята",
+    "Рішучість і вірність",
+    "Різдво",
+    "Наслідування Христа",
+    "Слово Боже",
+    "Спасіння",
+    "Страждання і смерть Христа",
+    "Утіха і підбадьорення",
+    "Хвала і подяка",
+    "Християнська радість",
+];
+
 pub fn category_name(id: i32) -> &'static str {
     CATEGORIES
         .get(id.max(0) as usize)
         .copied()
         .unwrap_or("Other")
+}
+
+/// Ukrainian category name used by the user interface.
+pub fn category_name_uk(id: i32) -> &'static str {
+    CATEGORIES_UK
+        .get(id.max(0) as usize)
+        .copied()
+        .unwrap_or("Інше")
 }
 
 /// Remove all non-alphanumeric characters, replacing them with spaces.  This is
@@ -294,6 +351,11 @@ impl Song {
 
     pub fn category_name(&self) -> &'static str {
         category_name(self.category)
+    }
+
+    /// Ukrainian category name used by the user interface.
+    pub fn category_name_uk(&self) -> &'static str {
+        category_name_uk(self.category)
     }
 
     pub fn load_all(db: &Database) -> Result<Vec<Song>> {
@@ -682,5 +744,15 @@ mod tests {
     #[test]
     fn clean_removes_punctuation() {
         assert_eq!(clean("Hello,   world!"), "Hello world");
+    }
+
+    #[test]
+    fn ukrainian_categories_match_english() {
+        assert_eq!(CATEGORIES.len(), CATEGORIES_UK.len());
+        assert_eq!(category_name_uk(0), "Інше");
+        assert_eq!(
+            category_name_uk(CATEGORIES.len() as i32 - 1),
+            "Християнська радість"
+        );
     }
 }

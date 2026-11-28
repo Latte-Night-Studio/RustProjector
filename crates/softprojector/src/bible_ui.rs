@@ -11,15 +11,15 @@ use sp_core::{BibleSession, ScheduleItem};
 impl App {
     pub fn bible_tab(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.heading("Bible");
+            ui.heading("Біблія");
             ui.separator();
-            ui.label("Version:");
+            ui.label("Версія:");
             let version_name = self
                 .bible_versions
                 .iter()
                 .find(|v| v.id == self.bible_version_id)
                 .map(|v| v.name.clone())
-                .unwrap_or_else(|| "No Bible loaded".into());
+                .unwrap_or_else(|| "Біблію не завантажено".into());
             egui::ComboBox::from_id_salt("bible-version")
                 .selected_text(version_name)
                 .width(240.0)
@@ -37,17 +37,17 @@ impl App {
                         }
                     }
                 });
-            if ui.button("📥 Import Bible...").clicked() {
+            if ui.button("📥 Імпортувати Біблію...").clicked() {
                 self.import_bible_dialog();
             }
-            if ui.button("Manage versions...").clicked() {
+            if ui.button("Керування версіями...").clicked() {
                 self.show_bible_manager = true;
             }
             ui.separator();
-            if ui.button("▶ Project selection").clicked() {
+            if ui.button("▶ Проєктувати вибране").clicked() {
                 self.project_bible_selection();
             }
-            if ui.button("Add to schedule").clicked() {
+            if ui.button("Додати до розкладу").clicked() {
                 self.add_bible_to_schedule();
             }
         });
@@ -56,7 +56,7 @@ impl App {
             ui.separator();
             ui.label(
                 RichText::new(
-                    "No Bible versions are installed. Use “Import Bible...” to load a .spb file.",
+                    "Не встановлено жодної версії Біблії. Скористайтеся «Імпортувати Біблію...», щоб завантажити файл .spb.",
                 )
                 .color(egui::Color32::YELLOW),
             );
@@ -64,14 +64,14 @@ impl App {
         }
 
         let Some(session) = self.bible_session.as_ref() else {
-            ui.label("Loading Bible...");
+            ui.label("Завантаження Біблії...");
             return;
         };
 
         let books = session.books.clone();
         ui.separator();
         ui.horizontal(|ui| {
-            ui.label("Book:");
+            ui.label("Книга:");
             let current_book_name = books
                 .iter()
                 .find(|b| b.book_id == self.bible_book)
@@ -86,7 +86,7 @@ impl App {
                             .selectable_value(
                                 &mut self.bible_book,
                                 book.book_id,
-                                format!("{} ({} ch.)", book.book, book.chapter_count),
+                                format!("{} (розд.: {})", book.book, book.chapter_count),
                             )
                             .clicked()
                         {
@@ -106,20 +106,20 @@ impl App {
             ui.add(
                 egui::DragValue::new(&mut self.bible_chapter)
                     .range(1..=max_chapter)
-                    .prefix("Chapter "),
+                    .prefix("Розділ "),
             );
             if ui.button("▶").clicked() {
                 self.bible_chapter = (self.bible_chapter + 1).min(max_chapter);
             }
             ui.separator();
-            ui.label(format!("Selected {} verse(s)", self.bible_selection.len()));
-            if ui.button("Select chapter").clicked() {
+            ui.label(format!("Вибрано віршів: {}", self.bible_selection.len()));
+            if ui.button("Вибрати розділ").clicked() {
                 if let Some(session) = self.bible_session.as_mut() {
                     let _ = session.chapter(self.bible_book, self.bible_chapter);
                     self.bible_selection = session.preview_id_list.clone();
                 }
             }
-            if ui.button("Clear").clicked() {
+            if ui.button("Очистити").clicked() {
                 self.bible_selection.clear();
             }
         });
@@ -128,7 +128,7 @@ impl App {
         ui.columns(2, |columns| {
             columns[0].set_width(360.0);
             egui::Frame::group(&style).show(&mut columns[0], |ui| {
-                ui.heading("Chapter");
+                ui.heading("Розділ");
                 let (verses, ids) = if let Some(session) = self.bible_session.as_mut() {
                     let verses = session.chapter(self.bible_book, self.bible_chapter);
                     (verses, session.preview_id_list.clone())
@@ -140,7 +140,7 @@ impl App {
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         if verses.is_empty() {
-                            ui.label(RichText::new("No verses in this chapter.").weak());
+                            ui.label(RichText::new("У цьому розділі немає віршів.").weak());
                         }
                         for (index, verse) in verses.iter().enumerate() {
                             let id = ids.get(index).cloned().unwrap_or_default();
@@ -155,24 +155,24 @@ impl App {
             });
 
             egui::Frame::group(&style).show(&mut columns[1], |ui| {
-                ui.heading("Search");
+                ui.heading("Пошук");
                 ui.horizontal(|ui| {
                     let response = ui.add(
                         egui::TextEdit::singleline(&mut self.bible_search)
                             .desired_width(260.0)
-                            .hint_text("word or phrase"),
+                            .hint_text("слово або фраза"),
                     );
-                    let search = ui.button("🔍 Search").clicked()
+                    let search = ui.button("🔍 Знайти").clicked()
                         || (response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)));
                     if search {
                         self.run_bible_search();
                     }
                 });
                 ui.horizontal(|ui| {
-                    ui.checkbox(&mut self.bible_all_words, "All words");
-                    ui.checkbox(&mut self.bible_scope_current, "Current chapter only");
+                    ui.checkbox(&mut self.bible_all_words, "Усі слова");
+                    ui.checkbox(&mut self.bible_scope_current, "Лише поточний розділ");
                     if !self.bible_results.is_empty() {
-                        ui.label(format!("{} results", self.bible_results.len()));
+                        ui.label(format!("Результатів: {}", self.bible_results.len()));
                     }
                 });
                 ui.separator();
@@ -185,7 +185,7 @@ impl App {
                         if self.bible_results.is_empty() {
                             ui.label(
                                 RichText::new(
-                                    "Search results will appear here. Click a result to add the verse to the selection.",
+                                    "Тут з'являться результати пошуку. Натисніть на результат, щоб додати вірш до вибраного.",
                                 )
                                 .weak(),
                             );
@@ -240,7 +240,7 @@ impl App {
         };
         self.bible_results = session.search(self.bible_all_words, &pattern, book, chapter);
         self.set_status(format!(
-            "Bible search: {} result(s)",
+            "Пошук у Біблії: результатів — {}",
             self.bible_results.len()
         ));
     }
@@ -248,8 +248,8 @@ impl App {
     pub fn project_bible_selection(&mut self) {
         if self.bible_selection.is_empty() {
             self.set_error(
-                "Nothing to project",
-                "select one or more Bible verses first",
+                "Нічого проєктувати",
+                "спершу виберіть один або кілька віршів",
             );
             return;
         }
@@ -260,7 +260,7 @@ impl App {
     /// Project a comma separated list of verse ids, used by the schedule too.
     pub fn project_bible_ids(&mut self, verse_ids: &str, source_hint: &str) {
         let Some(session) = self.bible_session.clone() else {
-            self.set_error("Nothing to project", "no Bible version is loaded");
+            self.set_error("Нічого проєктувати", "версію Біблії не завантажено");
             return;
         };
         let verse_ids = verse_ids.to_string();
@@ -293,7 +293,7 @@ impl App {
                     }
                     Ok(None) => continue,
                     Err(err) => {
-                        self.set_error("Could not load additional Bible version", err);
+                        self.set_error("Не вдалося завантажити додаткову версію Біблії", err);
                         continue;
                     }
                 }
@@ -318,7 +318,7 @@ impl App {
         let mut text = text_parts.join("\n\n");
         if text.trim().is_empty() {
             text = format!(
-                "The selected verse ids ({}) were not found in this Bible version.",
+                "Вибраних віршів ({}) не знайдено в цій версії Біблії.",
                 verse_ids
             );
         }
@@ -355,9 +355,9 @@ impl App {
         };
 
         let source = if source_hint.trim().is_empty() {
-            format!("Bible — {caption}")
+            format!("Біблія — {caption}")
         } else {
-            format!("Bible — {source_hint}")
+            format!("Біблія — {source_hint}")
         };
         self.start_presentation(
             source,
@@ -376,7 +376,10 @@ impl App {
 
     pub fn add_bible_to_schedule(&mut self) {
         if self.bible_selection.is_empty() {
-            self.set_error("Cannot add to schedule", "select one or more verses first");
+            self.set_error(
+                "Не вдалося додати до розкладу",
+                "спершу виберіть один або кілька віршів",
+            );
             return;
         }
         let Some(session) = self.bible_session.as_ref() else {
@@ -396,7 +399,7 @@ impl App {
             caption,
         }));
         self.selected_schedule = self.schedule.len().saturating_sub(1);
-        self.set_status("Bible verses added to schedule");
+        self.set_status("Вірші додано до розкладу");
     }
 
     pub fn bible_manager_window(&mut self, ctx: &egui::Context) {
@@ -404,7 +407,7 @@ impl App {
             return;
         }
         let mut open = self.show_bible_manager;
-        egui::Window::new("Bible versions")
+        egui::Window::new("Версії Біблії")
             .open(&mut open)
             .default_width(560.0)
             .show(ctx, |ui| {
@@ -416,7 +419,7 @@ impl App {
                                 ui.label(RichText::new(&version.name).strong());
                                 ui.label(
                                     RichText::new(format!(
-                                        "{} • {} books",
+                                        "{} • книг: {}",
                                         version.abbreviation,
                                         self.bible_versions.len()
                                     ))
@@ -425,22 +428,23 @@ impl App {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
-                                        if ui.small_button("Delete").clicked() {
+                                        if ui.small_button("Видалити").clicked() {
                                             match sp_core::BibleVersion::delete(
                                                 &self.db, version.id,
                                             ) {
                                                 Ok(()) => {
                                                     self.bible_extra_sessions.remove(&version.id);
                                                     self.reload_bible_versions();
-                                                    self.set_status("Bible version deleted");
+                                                    self.set_status("Версію Біблії видалено");
                                                 }
                                                 Err(err) => self.set_error(
-                                                    "Could not delete Bible version",
+                                                    "Не вдалося видалити версію Біблії",
                                                     err,
                                                 ),
                                             }
                                         }
-                                        if ui.small_button("Export...").clicked() {
+                                        if ui.small_button("Експортувати...").clicked()
+                                        {
                                             self.export_bible_dialog(version.id);
                                         }
                                     },
@@ -455,10 +459,10 @@ impl App {
                     });
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button("📥 Import .spb...").clicked() {
+                    if ui.button("📥 Імпортувати .spb...").clicked() {
                         self.import_bible_dialog();
                     }
-                    if ui.button("Export selected...").clicked() {
+                    if ui.button("Експортувати вибране...").clicked() {
                         self.export_bible_dialog(self.bible_version_id);
                     }
                 });
@@ -468,8 +472,8 @@ impl App {
 
     pub fn import_bible_dialog(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector Bible", &["spb"])
-            .add_filter("All files", &["*"])
+            .add_filter("Біблія SoftProjector", &["spb"])
+            .add_filter("Усі файли", &["*"])
             .pick_file()
         else {
             return;
@@ -481,15 +485,15 @@ impl App {
                 self.bible_version_id = id;
                 self.bible_session = None;
                 self.ensure_bible_session();
-                self.set_status(format!("Imported Bible from {}", path.display()));
+                self.set_status(format!("Біблію імпортовано з {}", path.display()));
             }
-            Err(err) => self.set_error("Could not import Bible", err),
+            Err(err) => self.set_error("Не вдалося імпортувати Біблію", err),
         }
     }
 
     pub fn export_bible_dialog(&mut self, version_id: i64) {
         if version_id <= 0 {
-            self.set_error("Could not export Bible", "no Bible version selected");
+            self.set_error("Не вдалося експортувати Біблію", "версію Біблії не вибрано");
             return;
         }
         let name = self
@@ -499,15 +503,15 @@ impl App {
             .map(|v| format!("{}.spb", v.name))
             .unwrap_or_else(|| "bible.spb".into());
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector Bible", &["spb"])
+            .add_filter("Біблія SoftProjector", &["spb"])
             .set_file_name(name)
             .save_file()
         else {
             return;
         };
         match export_bible(&self.db, version_id, &path) {
-            Ok(()) => self.set_status(format!("Exported Bible to {}", path.display())),
-            Err(err) => self.set_error("Could not export Bible", err),
+            Ok(()) => self.set_status(format!("Біблію експортовано до {}", path.display())),
+            Err(err) => self.set_error("Не вдалося експортувати Біблію", err),
         }
     }
 }

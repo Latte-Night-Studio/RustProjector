@@ -371,7 +371,7 @@ pub fn render_projection(
             painter.text(
                 rect.center() - Vec2::new(0.0, rect.height() * 0.03),
                 Align2::CENTER_CENTER,
-                "Video is playing in an external player",
+                "Відео відтворюється у зовнішньому плеєрі",
                 FontId::proportional((rect.height() * 0.035).clamp(14.0, 52.0)),
                 Color32::from_gray(190),
             );
@@ -575,9 +575,9 @@ pub fn song_ending(theme_ending_type: i32, words_by: &str, music_by: &str) -> St
         5 => "☦    ☦    ☦".into(),
         6 => "❧    ❧    ❧".into(),
         7 => match (words_by.is_empty(), music_by.is_empty()) {
-            (false, false) => format!("Words by: {words_by}, Music by: {music_by}"),
-            (false, true) => format!("Words by: {words_by}"),
-            (true, false) => format!("Music by: {music_by}"),
+            (false, false) => format!("Слова: {words_by}, музика: {music_by}"),
+            (false, true) => format!("Слова: {words_by}"),
+            (true, false) => format!("Музика: {music_by}"),
             (true, true) => "*    *    *".into(),
         },
         _ => "*    *    *".into(),

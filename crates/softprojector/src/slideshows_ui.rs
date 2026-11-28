@@ -12,19 +12,19 @@ impl App {
         let mut changed = false;
 
         ui.horizontal(|ui| {
-            ui.heading("Slideshows");
-            if ui.button("➕ New slideshow...").clicked() {
+            ui.heading("Слайд-шоу");
+            if ui.button("➕ Нове слайд-шоу...").clicked() {
                 self.slideshow_draft = Some(SlideshowDraft {
-                    name: "New slideshow".into(),
+                    name: "Нове слайд-шоу".into(),
                     info: String::new(),
                     files: Vec::new(),
                 });
             }
-            if ui.button("🖼 Add images...").clicked() {
+            if ui.button("🖼 Додати зображення...").clicked() {
                 if let Some(show) = show.as_mut() {
                     if let Some(paths) = rfd::FileDialog::new()
                         .add_filter(
-                            "Images",
+                            "Зображення",
                             &["jpg", "jpeg", "png", "bmp", "gif", "webp", "tif", "tiff"],
                         )
                         .pick_files()
@@ -33,7 +33,7 @@ impl App {
                             let path_text = path.to_string_lossy().to_string();
                             match make_slide_item(&path_text, show.slides.len() as i32) {
                                 Ok(item) => show.slides.push(item),
-                                Err(err) => self.set_error("Could not add image", err),
+                                Err(err) => self.set_error("Не вдалося додати зображення", err),
                             }
                         }
                         changed = true;
@@ -41,20 +41,20 @@ impl App {
                 }
             }
             ui.separator();
-            if ui.button("▶ Project").clicked() {
+            if ui.button("▶ Проєктувати").clicked() {
                 if let Some(show) = show.as_ref() {
                     self.project_slideshow(show, 0);
                 }
             }
-            if ui.button("Add to schedule").clicked() {
+            if ui.button("Додати до розкладу").clicked() {
                 if let Some(show) = show.as_ref() {
                     self.schedule
                         .push(ScheduleItem::from_slideshow(show.clone()));
                     self.selected_schedule = self.schedule.len().saturating_sub(1);
-                    self.set_status("Slideshow added to schedule");
+                    self.set_status("Слайд-шоу додано до розкладу");
                 }
             }
-            if ui.button("🗑 Delete").clicked() {
+            if ui.button("🗑 Видалити").clicked() {
                 if self.selected_slideshow > 0 {
                     match SlideShow::delete(&self.db, self.selected_slideshow) {
                         Ok(()) => {
@@ -62,9 +62,9 @@ impl App {
                             self.slideshow_loaded_id = 0;
                             self.selected_slideshow = 0;
                             self.reload_slideshows();
-                            self.set_status("Slideshow deleted");
+                            self.set_status("Слайд-шоу видалено");
                         }
-                        Err(err) => self.set_error("Could not delete slideshow", err),
+                        Err(err) => self.set_error("Не вдалося видалити слайд-шоу", err),
                     }
                 }
             }
@@ -75,14 +75,14 @@ impl App {
         ui.columns(2, |columns| {
             columns[0].set_width(260.0);
             egui::Frame::group(&style).show(&mut columns[0], |ui| {
-                ui.heading("All slideshows");
+                ui.heading("Усі слайд-шоу");
                 let mut select_id = None;
                 egui::ScrollArea::vertical()
                     .id_salt("slideshows-list")
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         if self.slideshow_infos.is_empty() {
-                            ui.label(RichText::new("No slideshows yet.").weak());
+                            ui.label(RichText::new("Слайд-шоу ще немає.").weak());
                         }
                         for info in &self.slideshow_infos {
                             let selected = info.id == self.selected_slideshow;
@@ -100,11 +100,11 @@ impl App {
                 }
                 if let Some(show) = show.as_mut() {
                     ui.separator();
-                    ui.label("Name:");
+                    ui.label("Назва:");
                     ui.text_edit_singleline(&mut show.name);
-                    ui.label("Info:");
+                    ui.label("Інформація:");
                     ui.text_edit_singleline(&mut show.info);
-                    if ui.button("💾 Save details").clicked() {
+                    if ui.button("💾 Зберегти дані").clicked() {
                         changed = true;
                     }
                 }
@@ -112,12 +112,12 @@ impl App {
 
             egui::Frame::group(&style).show(&mut columns[1], |ui| {
                 let Some(show) = show.as_mut() else {
-                    ui.label("Select a slideshow or create a new one.");
+                    ui.label("Виберіть слайд-шоу або створіть нове.");
                     return;
                 };
                 ui.horizontal(|ui| {
                     ui.heading(&show.name);
-                    ui.label(RichText::new(format!("{} slides", show.slides.len())).weak());
+                    ui.label(RichText::new(format!("Слайдів: {}", show.slides.len())).weak());
                 });
                 if !show.info.is_empty() {
                     ui.label(RichText::new(&show.info).weak());
@@ -216,7 +216,7 @@ impl App {
                     ui.add_space(12.0);
                     ui.label(
                         RichText::new(
-                            "This slideshow is empty. Use “Add images...” to add pictures.",
+                            "Це слайд-шоу порожнє. Скористайтеся «Додати зображення...», щоб додати картинки.",
                         )
                         .weak(),
                     );
@@ -230,9 +230,9 @@ impl App {
                     Ok(()) => {
                         self.reload_slideshows();
                         self.slideshow_loaded_id = show.id;
-                        self.set_status("Slideshow saved");
+                        self.set_status("Слайд-шоу збережено");
                     }
-                    Err(err) => self.set_error("Could not save slideshow", err),
+                    Err(err) => self.set_error("Не вдалося зберегти слайд-шоу", err),
                 }
             }
             self.current_slideshow = Some(show);
@@ -256,7 +256,7 @@ impl App {
                 }
             })
             .collect();
-        self.start_presentation(format!("Slideshow — {}", show.name), slides, index);
+        self.start_presentation(format!("Слайд-шоу — {}", show.name), slides, index);
     }
 
     pub fn slideshow_dialog(&mut self, ctx: &egui::Context) {
@@ -266,25 +266,25 @@ impl App {
         let mut open = true;
         let mut create = false;
         let mut cancel = false;
-        egui::Window::new("New slideshow")
+        egui::Window::new("Нове слайд-шоу")
             .open(&mut open)
             .default_width(520.0)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("Name:");
+                    ui.label("Назва:");
                     ui.text_edit_singleline(&mut draft.name);
                 });
                 ui.horizontal(|ui| {
-                    ui.label("Info:");
+                    ui.label("Інформація:");
                     ui.text_edit_singleline(&mut draft.info);
                 });
                 ui.separator();
-                ui.label(format!("{} image(s) selected", draft.files.len()));
+                ui.label(format!("Вибрано зображень: {}", draft.files.len()));
                 ui.horizontal(|ui| {
-                    if ui.button("Add images...").clicked() {
+                    if ui.button("Додати зображення...").clicked() {
                         if let Some(paths) = rfd::FileDialog::new()
                             .add_filter(
-                                "Images",
+                                "Зображення",
                                 &["jpg", "jpeg", "png", "bmp", "gif", "webp", "tif", "tiff"],
                             )
                             .pick_files()
@@ -294,7 +294,7 @@ impl App {
                             }
                         }
                     }
-                    if ui.button("Clear").clicked() {
+                    if ui.button("Очистити").clicked() {
                         draft.files.clear();
                     }
                 });
@@ -308,10 +308,10 @@ impl App {
                     });
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button("Create").clicked() {
+                    if ui.button("Створити").clicked() {
                         create = true;
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button("Скасувати").clicked() {
                         cancel = true;
                     }
                 });
@@ -327,9 +327,9 @@ impl App {
                     self.selected_slideshow = show.id;
                     self.slideshow_loaded_id = 0;
                     self.reload_slideshows();
-                    self.set_status("Slideshow created");
+                    self.set_status("Слайд-шоу створено");
                 }
-                Err(err) => self.set_error("Could not create slideshow", err),
+                Err(err) => self.set_error("Не вдалося створити слайд-шоу", err),
             }
         } else if open {
             self.slideshow_draft = Some(draft);

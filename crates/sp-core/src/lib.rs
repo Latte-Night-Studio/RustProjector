@@ -33,11 +33,11 @@ pub use settings::{
     BibleVersionSettings, DisplayControlsSettings, GeneralSettings, Settings, SlideShowSettings,
 };
 pub use slideshow::{SlideShow, SlideShowInfo, SlideShowItem};
-pub use song::{Song, Songbook, Stanza, CATEGORIES};
+pub use song::{category_name_uk, Song, Songbook, Stanza, CATEGORIES, CATEGORIES_UK};
 pub use theme::{AnnounceSettings, BibleSettings, PassiveSettings, SongSettings, Theme, ThemeInfo};
 
 /// The database schema version understood by this port.
 pub const DB_VERSION: i64 = 2;
 
 /// Version string shown by the application.
-pub const APP_VERSION: &str = "2.0 (Rust port)";
+pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");

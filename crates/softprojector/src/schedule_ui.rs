@@ -9,30 +9,30 @@ use sp_core::ScheduleKind;
 impl App {
     pub fn schedule_tab(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.heading("Schedule");
-            if ui.button("📂 Open...").clicked() {
+            ui.heading("Розклад");
+            if ui.button("📂 Відкрити...").clicked() {
                 self.open_schedule_dialog();
             }
-            if ui.button("💾 Save as...").clicked() {
+            if ui.button("💾 Зберегти як...").clicked() {
                 self.save_schedule_dialog();
             }
-            if ui.button("🗑 Clear").clicked() {
+            if ui.button("🗑 Очистити").clicked() {
                 self.schedule.clear();
                 self.selected_schedule = 0;
-                self.set_status("Schedule cleared");
+                self.set_status("Розклад очищено");
             }
             ui.separator();
-            if ui.button("▶ Project selected").clicked() {
+            if ui.button("▶ Проєктувати вибране").clicked() {
                 self.project_schedule_item(self.selected_schedule);
             }
-            ui.label(format!("{} item(s)", self.schedule.len()));
+            ui.label(format!("Елементів: {}", self.schedule.len()));
         });
         ui.separator();
 
         if self.schedule.is_empty() {
             ui.label(
                 RichText::new(
-                    "The schedule is empty. Add songs, Bible verses, announcements, slideshows or media from their tabs.",
+                    "Розклад порожній. Додавайте пісні, вірші Біблії, оголошення, слайд-шоу або медіа з відповідних вкладок.",
                 )
                 .weak(),
             );
@@ -52,17 +52,17 @@ impl App {
             .show(ui, |ui| {
                 for (index, item) in self.schedule.iter().enumerate() {
                     let kind = match &item.kind {
-                        ScheduleKind::Bible(_) => "Bible",
-                        ScheduleKind::Song(_) => "Song",
-                        ScheduleKind::SlideShow(_) => "Slideshow",
+                        ScheduleKind::Bible(_) => "Біблія",
+                        ScheduleKind::Song(_) => "Пісня",
+                        ScheduleKind::SlideShow(_) => "Слайд-шоу",
                         ScheduleKind::Media(media) => {
                             if is_video_path(&media.long_path) {
-                                "Video"
+                                "Відео"
                             } else {
-                                "Image"
+                                "Зображення"
                             }
                         }
-                        ScheduleKind::Announce(_) => "Announcement",
+                        ScheduleKind::Announce(_) => "Оголошення",
                     };
                     ui.horizontal(|ui| {
                         if ui
@@ -75,16 +75,25 @@ impl App {
                             select = Some(index);
                         }
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.small_button("✖").on_hover_text("Remove").clicked() {
+                            if ui.small_button("✖").on_hover_text("Видалити").clicked() {
                                 remove = Some(index);
                             }
-                            if ui.small_button("▼").on_hover_text("Move down").clicked() {
+                            if ui
+                                .small_button("▼")
+                                .on_hover_text("Перемістити вниз")
+                                .clicked()
+                            {
                                 move_down = Some(index);
                             }
-                            if ui.small_button("▲").on_hover_text("Move up").clicked() {
+                            if ui
+                                .small_button("▲")
+                                .on_hover_text("Перемістити вгору")
+                                .clicked()
+                            {
                                 move_up = Some(index);
                             }
-                            if ui.small_button("▶").on_hover_text("Project").clicked() {
+                            if ui.small_button("▶").on_hover_text("Проєктувати").clicked()
+                            {
                                 project = Some(index);
                             }
                         });
@@ -137,8 +146,8 @@ impl App {
 
     pub fn open_schedule_dialog(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector schedule", &["spsc"])
-            .add_filter("All files", &["*"])
+            .add_filter("Розклад SoftProjector", &["spsc"])
+            .add_filter("Усі файли", &["*"])
             .pick_file()
         else {
             return;
@@ -148,22 +157,22 @@ impl App {
                 self.schedule = items;
                 self.selected_schedule = 0;
                 self.set_status(format!(
-                    "Opened schedule {} ({} items)",
+                    "Розклад відкрито: {} (елементів: {})",
                     path.display(),
                     self.schedule.len()
                 ));
             }
-            Err(err) => self.set_error("Could not open schedule", err),
+            Err(err) => self.set_error("Не вдалося відкрити розклад", err),
         }
     }
 
     pub fn save_schedule_dialog(&mut self) {
         if self.schedule.is_empty() {
-            self.set_error("Could not save schedule", "the schedule is empty");
+            self.set_error("Не вдалося зберегти розклад", "розклад порожній");
             return;
         }
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector schedule", &["spsc"])
+            .add_filter("Розклад SoftProjector", &["spsc"])
             .set_file_name("service.spsc")
             .save_file()
         else {
@@ -173,9 +182,9 @@ impl App {
         match save_schedule(&path, &mut items) {
             Ok(()) => {
                 self.schedule = items;
-                self.set_status(format!("Saved schedule to {}", path.display()));
+                self.set_status(format!("Розклад збережено до {}", path.display()));
             }
-            Err(err) => self.set_error("Could not save schedule", err),
+            Err(err) => self.set_error("Не вдалося зберегти розклад", err),
         }
     }
 }

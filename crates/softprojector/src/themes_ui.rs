@@ -9,34 +9,34 @@ use sp_core::theme::{AnnounceSettings, BibleSettings, PassiveSettings, SongSetti
 impl App {
     pub fn themes_tab(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.heading("Themes");
-            if ui.button("➕ New").clicked() {
+            ui.heading("Теми");
+            if ui.button("➕ Нове").clicked() {
                 let mut theme = Theme::default();
-                theme.name = "New theme".into();
+                theme.name = "Нова тема".into();
                 theme.comments.clear();
                 match theme.save_new(&self.db) {
                     Ok(()) => {
                         self.reload_themes();
                         self.load_theme(theme.theme_id);
-                        self.set_status("Theme created");
+                        self.set_status("Тему створено");
                     }
-                    Err(err) => self.set_error("Could not create theme", err),
+                    Err(err) => self.set_error("Не вдалося створити тему", err),
                 }
             }
-            if ui.button("⧉ Duplicate").clicked() {
-                let name = format!("{} copy", self.theme.name);
+            if ui.button("⧉ Дублювати").clicked() {
+                let name = format!("{} — копія", self.theme.name);
                 match self.theme.duplicate(&self.db, &name, &self.theme.comments) {
                     Ok(id) => {
                         self.reload_themes();
                         self.load_theme(id);
-                        self.set_status("Theme duplicated");
+                        self.set_status("Тему продубльовано");
                     }
-                    Err(err) => self.set_error("Could not duplicate theme", err),
+                    Err(err) => self.set_error("Не вдалося продублювати тему", err),
                 }
             }
-            if ui.button("🗑 Delete").clicked() {
+            if ui.button("🗑 Видалити").clicked() {
                 if self.theme_infos.len() <= 1 {
-                    self.set_error("Could not delete theme", "at least one theme is required");
+                    self.set_error("Не вдалося видалити тему", "потрібна принаймні одна тема");
                 } else {
                     let id = self.theme.theme_id;
                     match Theme::delete(&self.db, id) {
@@ -44,32 +44,32 @@ impl App {
                             self.reload_themes();
                             let next = self.theme_infos.first().map(|t| t.theme_id).unwrap_or(0);
                             self.load_theme(next);
-                            self.set_status("Theme deleted");
+                            self.set_status("Тему видалено");
                         }
-                        Err(err) => self.set_error("Could not delete theme", err),
+                        Err(err) => self.set_error("Не вдалося видалити тему", err),
                     }
                 }
             }
             ui.separator();
-            if ui.button("📥 Import themes...").clicked() {
+            if ui.button("📥 Імпортувати теми...").clicked() {
                 self.import_themes_dialog();
             }
-            if ui.button("📤 Export all themes...").clicked() {
+            if ui.button("📤 Експортувати всі теми...").clicked() {
                 self.export_themes_dialog();
             }
         });
         ui.separator();
 
         ui.horizontal(|ui| {
-            ui.label("Editing display:");
-            ui.selectable_value(&mut self.theme_display, 1, "Display 1");
-            ui.selectable_value(&mut self.theme_display, 2, "Display 2");
+            ui.label("Редагування дисплея:");
+            ui.selectable_value(&mut self.theme_display, 1, "Дисплей 1");
+            ui.selectable_value(&mut self.theme_display, 2, "Дисплей 2");
             ui.separator();
             for (section, label) in [
-                (ThemeSection::Bible, "Bible"),
-                (ThemeSection::Song, "Songs"),
-                (ThemeSection::Announce, "Announcements"),
-                (ThemeSection::Passive, "Passive / background"),
+                (ThemeSection::Bible, "Біблія"),
+                (ThemeSection::Song, "Пісні"),
+                (ThemeSection::Announce, "Оголошення"),
+                (ThemeSection::Passive, "Пасивний / фон"),
             ] {
                 ui.selectable_value(&mut self.theme_section, section, label);
             }
@@ -87,7 +87,7 @@ impl App {
         ui.columns(2, |columns| {
             columns[0].set_width(240.0);
             egui::Frame::group(&style).show(&mut columns[0], |ui| {
-                ui.heading("Themes");
+                ui.heading("Теми");
                 egui::ScrollArea::vertical()
                     .id_salt("themes-list")
                     .max_height(ui.available_height() - 8.0)
@@ -116,9 +116,9 @@ impl App {
 
             egui::Frame::group(&style).show(&mut columns[1], |ui| {
                 ui.horizontal(|ui| {
-                    ui.heading("Theme");
+                    ui.heading("Тема");
                     ui.label(
-                        RichText::new(format!("(#{} • display {})", theme.theme_id, display))
+                        RichText::new(format!("(#{} • дисплей {})", theme.theme_id, display))
                             .weak(),
                     );
                 });
@@ -126,10 +126,10 @@ impl App {
                     .num_columns(2)
                     .spacing([10.0, 5.0])
                     .show(ui, |ui| {
-                        ui.label("Name");
+                        ui.label("Назва");
                         ui.text_edit_singleline(&mut theme.name);
                         ui.end_row();
-                        ui.label("Comments");
+                        ui.label("Коментарі");
                         ui.text_edit_singleline(&mut theme.comments);
                         ui.end_row();
                     });
@@ -151,14 +151,14 @@ impl App {
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    if ui.button("💾 Save theme").clicked() {
+                    if ui.button("💾 Зберегти тему").clicked() {
                         save = true;
                     }
-                    if ui.button("↺ Reload").clicked() {
+                    if ui.button("↺ Перезавантажити").clicked() {
                         load_id = Some(theme.theme_id);
                     }
                     ui.label(
-                        RichText::new("Changes are applied immediately to new projections.").weak(),
+                        RichText::new("Зміни одразу застосовуються до нових проєкцій.").weak(),
                     );
                 });
             });
@@ -174,9 +174,9 @@ impl App {
                         let _ = self.settings.save(&self.db);
                         self.images.clear();
                         self.reload_themes();
-                        self.set_status("Theme saved");
+                        self.set_status("Тему збережено");
                     }
-                    Err(err) => self.set_error("Could not save theme", err),
+                    Err(err) => self.set_error("Не вдалося зберегти тему", err),
                 }
             }
             self.theme = theme;
@@ -185,8 +185,8 @@ impl App {
 
     pub fn import_themes_dialog(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector theme", &["spt"])
-            .add_filter("All files", &["*"])
+            .add_filter("Тема SoftProjector", &["spt"])
+            .add_filter("Усі файли", &["*"])
             .pick_file()
         else {
             return;
@@ -194,78 +194,88 @@ impl App {
         match import_themes(&self.db, &path) {
             Ok(count) => {
                 self.reload_themes();
-                self.set_status(format!("Imported {count} theme(s)"));
+                self.set_status(format!("Імпортовано тем: {count}"));
             }
-            Err(err) => self.set_error("Could not import themes", err),
+            Err(err) => self.set_error("Не вдалося імпортувати теми", err),
         }
     }
 
     pub fn export_themes_dialog(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector theme", &["spt"])
+            .add_filter("Тема SoftProjector", &["spt"])
             .set_file_name("themes.spt")
             .save_file()
         else {
             return;
         };
         match export_themes(&self.db, &path, None) {
-            Ok(()) => self.set_status(format!("Exported themes to {}", path.display())),
-            Err(err) => self.set_error("Could not export themes", err),
+            Ok(()) => self.set_status(format!("Теми експортовано до {}", path.display())),
+            Err(err) => self.set_error("Не вдалося експортувати теми", err),
         }
     }
 }
 
 fn bible_editor(ui: &mut egui::Ui, s: &mut BibleSettings) {
-    ui.heading("Bible text");
+    ui.heading("Текст Біблії");
     ui.horizontal(|ui| {
-        ui.checkbox(&mut s.use_shadow, "Text shadow");
-        ui.checkbox(&mut s.use_fading, "Fade transition");
-        ui.checkbox(&mut s.use_blur_shadow, "Blur shadow");
+        ui.checkbox(&mut s.use_shadow, "Тінь тексту");
+        ui.checkbox(&mut s.use_fading, "Плавний перехід");
+        ui.checkbox(&mut s.use_blur_shadow, "Розмита тінь");
     });
-    widgets::font_edit(ui, "Text font", &mut s.text_font);
-    widgets::color_edit(ui, "Text color", &mut s.text_color);
-    widgets::alignment_edit(ui, "Horizontal alignment", &mut s.text_alignment_h, false);
-    widgets::alignment_edit(ui, "Vertical alignment", &mut s.text_alignment_v, true);
+    widgets::font_edit(ui, "Шрифт тексту", &mut s.text_font);
+    widgets::color_edit(ui, "Колір тексту", &mut s.text_color);
+    widgets::alignment_edit(
+        ui,
+        "Горизонтальне вирівнювання",
+        &mut s.text_alignment_h,
+        false,
+    );
+    widgets::alignment_edit(
+        ui,
+        "Вертикальне вирівнювання",
+        &mut s.text_alignment_v,
+        true,
+    );
 
     ui.separator();
-    ui.heading("Caption");
-    widgets::font_edit(ui, "Caption font", &mut s.caption_font);
-    widgets::color_edit(ui, "Caption color", &mut s.caption_color);
-    widgets::alignment_edit(ui, "Caption alignment", &mut s.caption_alignment, false);
+    ui.heading("Підпис");
+    widgets::font_edit(ui, "Шрифт підпису", &mut s.caption_font);
+    widgets::color_edit(ui, "Колір підпису", &mut s.caption_color);
+    widgets::alignment_edit(ui, "Вирівнювання підпису", &mut s.caption_alignment, false);
     ui.horizontal(|ui| {
-        ui.label("Caption position");
+        ui.label("Позиція підпису");
         egui::ComboBox::from_id_salt("bible-caption-position")
             .selected_text(if s.caption_position == 0 {
-                "Top"
+                "Вгорі"
             } else {
-                "Bottom"
+                "Внизу"
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut s.caption_position, 0, "Top");
-                ui.selectable_value(&mut s.caption_position, 1, "Bottom");
+                ui.selectable_value(&mut s.caption_position, 0, "Вгорі");
+                ui.selectable_value(&mut s.caption_position, 1, "Внизу");
             });
-        ui.checkbox(&mut s.use_abbriviations, "Use abbreviation");
+        ui.checkbox(&mut s.use_abbriviations, "Використовувати скорочення");
     });
 
     ui.separator();
-    ui.heading("Screen use");
+    ui.heading("Використання екрана");
     ui.add(
         egui::Slider::new(&mut s.screen_use, 25..=100)
-            .text("Screen fill (%)")
+            .text("Заповнення екрана (%)")
             .suffix("%"),
     );
     ui.horizontal(|ui| {
-        ui.label("Vertical position");
+        ui.label("Вертикальна позиція");
         egui::ComboBox::from_id_salt("bible-screen-position")
             .selected_text(match s.screen_position {
-                0 => "Top",
-                2 => "Bottom",
-                _ => "Center",
+                0 => "Вгорі",
+                2 => "Внизу",
+                _ => "По центру",
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut s.screen_position, 0, "Top");
-                ui.selectable_value(&mut s.screen_position, 1, "Center");
-                ui.selectable_value(&mut s.screen_position, 2, "Bottom");
+                ui.selectable_value(&mut s.screen_position, 0, "Вгорі");
+                ui.selectable_value(&mut s.screen_position, 1, "По центру");
+                ui.selectable_value(&mut s.screen_position, 2, "Внизу");
             });
     });
 
@@ -279,44 +289,61 @@ fn bible_editor(ui: &mut egui::Ui, s: &mut BibleSettings) {
 }
 
 fn song_editor(ui: &mut egui::Ui, s: &mut SongSettings) {
-    ui.heading("Song text");
+    ui.heading("Текст пісні");
     ui.horizontal(|ui| {
-        ui.checkbox(&mut s.use_shadow, "Text shadow");
-        ui.checkbox(&mut s.use_fading, "Fade transition");
-        ui.checkbox(&mut s.use_blur_shadow, "Blur shadow");
+        ui.checkbox(&mut s.use_shadow, "Тінь тексту");
+        ui.checkbox(&mut s.use_fading, "Плавний перехід");
+        ui.checkbox(&mut s.use_blur_shadow, "Розмита тінь");
     });
-    widgets::font_edit(ui, "Text font", &mut s.text_font);
-    widgets::color_edit(ui, "Text color", &mut s.text_color);
-    widgets::alignment_edit(ui, "Horizontal alignment", &mut s.text_alignment_h, false);
-    widgets::alignment_edit(ui, "Vertical alignment", &mut s.text_alignment_v, true);
-    ui.add(egui::Slider::new(&mut s.screen_use, 25..=100).text("Screen fill (%)"));
+    widgets::font_edit(ui, "Шрифт тексту", &mut s.text_font);
+    widgets::color_edit(ui, "Колір тексту", &mut s.text_color);
+    widgets::alignment_edit(
+        ui,
+        "Горизонтальне вирівнювання",
+        &mut s.text_alignment_h,
+        false,
+    );
+    widgets::alignment_edit(
+        ui,
+        "Вертикальне вирівнювання",
+        &mut s.text_alignment_v,
+        true,
+    );
+    ui.add(egui::Slider::new(&mut s.screen_use, 25..=100).text("Заповнення екрана (%)"));
 
     ui.separator();
-    ui.heading("Song information");
+    ui.heading("Інформація про пісню");
     ui.horizontal(|ui| {
-        ui.checkbox(&mut s.show_stanza_title, "Show stanza title");
-        ui.checkbox(&mut s.show_song_number, "Show song number");
-        ui.checkbox(&mut s.show_song_key, "Show key");
+        ui.checkbox(&mut s.show_stanza_title, "Показувати назву куплету");
+        ui.checkbox(&mut s.show_song_number, "Показувати номер пісні");
+        ui.checkbox(&mut s.show_song_key, "Показувати тональність");
     });
-    widgets::font_edit(ui, "Info font", &mut s.info_font);
-    widgets::color_edit(ui, "Info color", &mut s.info_color);
+    widgets::font_edit(ui, "Шрифт інформації", &mut s.info_font);
+    widgets::color_edit(ui, "Колір інформації", &mut s.info_color);
     ui.horizontal(|ui| {
-        ui.label("Info position");
+        ui.label("Позиція інформації");
         egui::ComboBox::from_id_salt("song-info-position")
-            .selected_text(if s.info_align == 0 { "Top" } else { "Bottom" })
+            .selected_text(if s.info_align == 0 {
+                "Вгорі"
+            } else {
+                "Внизу"
+            })
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut s.info_align, 0, "Top");
-                ui.selectable_value(&mut s.info_align, 1, "Bottom");
+                ui.selectable_value(&mut s.info_align, 0, "Вгорі");
+                ui.selectable_value(&mut s.info_align, 1, "Внизу");
             });
     });
 
     ui.separator();
-    ui.heading("Song ending");
-    ui.checkbox(&mut s.show_song_ending, "Show ending on the last stanza");
-    widgets::font_edit(ui, "Ending font", &mut s.ending_font);
-    widgets::color_edit(ui, "Ending color", &mut s.ending_color);
+    ui.heading("Закінчення пісні");
+    ui.checkbox(
+        &mut s.show_song_ending,
+        "Показувати закінчення на останньому куплеті",
+    );
+    widgets::font_edit(ui, "Шрифт закінчення", &mut s.ending_font);
+    widgets::color_edit(ui, "Колір закінчення", &mut s.ending_color);
     ui.horizontal(|ui| {
-        ui.label("Ending");
+        ui.label("Закінчення");
         egui::ComboBox::from_id_salt("song-ending-type")
             .selected_text(ENDING_NAMES[s.ending_type.clamp(0, 7) as usize])
             .show_ui(ui, |ui| {
@@ -324,16 +351,16 @@ fn song_editor(ui: &mut egui::Ui, s: &mut SongSettings) {
                     ui.selectable_value(&mut s.ending_type, index as i32, *name);
                 }
             });
-        ui.label("Position");
+        ui.label("Позиція");
         egui::ComboBox::from_id_salt("song-ending-position")
             .selected_text(if s.ending_position == 0 {
-                "Top"
+                "Вгорі"
             } else {
-                "Bottom"
+                "Внизу"
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut s.ending_position, 0, "Top");
-                ui.selectable_value(&mut s.ending_position, 1, "Bottom");
+                ui.selectable_value(&mut s.ending_position, 0, "Вгорі");
+                ui.selectable_value(&mut s.ending_position, 1, "Внизу");
             });
     });
 
@@ -347,27 +374,37 @@ fn song_editor(ui: &mut egui::Ui, s: &mut SongSettings) {
 }
 
 const ENDING_NAMES: [&str; 8] = [
-    "Asterisks",
-    "Dashes",
-    "Music notes",
-    "Hearts",
-    "Cross",
-    "Orthodox cross",
-    "Fleuron",
-    "Words / Music by",
+    "Зірочки",
+    "Рисочки",
+    "Ноти",
+    "Сердечка",
+    "Хрест",
+    "Православний хрест",
+    "Орнамент",
+    "Слова / музика",
 ];
 
 fn announce_editor(ui: &mut egui::Ui, s: &mut AnnounceSettings) {
-    ui.heading("Announcement text");
+    ui.heading("Текст оголошення");
     ui.horizontal(|ui| {
-        ui.checkbox(&mut s.use_shadow, "Text shadow");
-        ui.checkbox(&mut s.use_fading, "Fade transition");
-        ui.checkbox(&mut s.use_blur_shadow, "Blur shadow");
+        ui.checkbox(&mut s.use_shadow, "Тінь тексту");
+        ui.checkbox(&mut s.use_fading, "Плавний перехід");
+        ui.checkbox(&mut s.use_blur_shadow, "Розмита тінь");
     });
-    widgets::font_edit(ui, "Text font", &mut s.text_font);
-    widgets::color_edit(ui, "Text color", &mut s.text_color);
-    widgets::alignment_edit(ui, "Horizontal alignment", &mut s.text_alignment_h, false);
-    widgets::alignment_edit(ui, "Vertical alignment", &mut s.text_alignment_v, true);
+    widgets::font_edit(ui, "Шрифт тексту", &mut s.text_font);
+    widgets::color_edit(ui, "Колір тексту", &mut s.text_color);
+    widgets::alignment_edit(
+        ui,
+        "Горизонтальне вирівнювання",
+        &mut s.text_alignment_h,
+        false,
+    );
+    widgets::alignment_edit(
+        ui,
+        "Вертикальне вирівнювання",
+        &mut s.text_alignment_v,
+        true,
+    );
     ui.separator();
     widgets::background_edit(
         ui,
@@ -378,10 +415,10 @@ fn announce_editor(ui: &mut egui::Ui, s: &mut AnnounceSettings) {
 }
 
 fn passive_editor(ui: &mut egui::Ui, s: &mut PassiveSettings) {
-    ui.heading("Passive display");
+    ui.heading("Пасивний показ");
     ui.label(
         RichText::new(
-            "The passive view is shown when nothing is being projected. It usually contains a logo or a welcome background.",
+            "Пасивний показ відображається, коли нічого не проєктується. Зазвичай це логотип або вітальний фон.",
         )
         .weak(),
     );

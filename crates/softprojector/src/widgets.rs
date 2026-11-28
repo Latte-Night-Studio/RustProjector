@@ -19,15 +19,15 @@ pub fn font_edit(ui: &mut Ui, label: &str, font: &mut FontSpec) {
         ui.add(
             egui::TextEdit::singleline(&mut font.family)
                 .desired_width(120.0)
-                .hint_text("font"),
+                .hint_text("шрифт"),
         );
         ui.add(
             DragValue::new(&mut font.point_size)
                 .range(6..=300)
                 .suffix(" pt"),
         );
-        ui.checkbox(&mut font.italic, "italic");
-        ui.checkbox(&mut font.underline, "underline");
+        ui.checkbox(&mut font.italic, "курсив");
+        ui.checkbox(&mut font.underline, "підкреслення");
     });
 }
 
@@ -35,9 +35,9 @@ pub fn font_edit(ui: &mut Ui, label: &str, font: &mut FontSpec) {
 /// right/bottom, matching the values stored by SoftProjector.
 pub fn alignment_edit(ui: &mut Ui, label: &str, value: &mut i32, vertical: bool) {
     let names: [&str; 3] = if vertical {
-        ["Top", "Center", "Bottom"]
+        ["Вгорі", "По центру", "Внизу"]
     } else {
-        ["Left", "Center", "Right"]
+        ["Ліворуч", "По центру", "Праворуч"]
     };
     ui.horizontal(|ui| {
         ui.label(label);
@@ -58,12 +58,12 @@ pub fn background_edit(
     name: &mut String,
     bytes: &mut Option<Vec<u8>>,
 ) {
-    ui.checkbox(use_background, "Use background image");
+    ui.checkbox(use_background, "Використовувати фонове зображення");
     ui.horizontal(|ui| {
-        if ui.button("Choose background...").clicked() {
+        if ui.button("Вибрати фон...").clicked() {
             if let Some(path) = rfd::FileDialog::new()
                 .add_filter(
-                    "Images",
+                    "Зображення",
                     &["jpg", "jpeg", "png", "bmp", "gif", "webp", "tif", "tiff"],
                 )
                 .pick_file()
@@ -82,12 +82,12 @@ pub fn background_edit(
                 }
             }
         }
-        if ui.button("Clear").clicked() {
+        if ui.button("Очистити").clicked() {
             *bytes = None;
             name.clear();
         }
         ui.label(if name.is_empty() {
-            "no image".to_string()
+            "без зображення".to_string()
         } else {
             name.clone()
         });

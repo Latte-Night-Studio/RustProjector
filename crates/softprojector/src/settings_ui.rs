@@ -6,26 +6,30 @@ use eframe::egui::{self, RichText};
 
 impl App {
     pub fn settings_tab(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Settings");
+        let mut check_update = false;
+        let mut download_update = false;
+        let mut install_update = false;
+
+        ui.heading("Налаштування");
         ui.separator();
 
         egui::ScrollArea::vertical()
             .id_salt("settings-scroll")
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                ui.heading("Projection display");
+                ui.heading("Дисплей проєкції");
                 egui::Grid::new("settings-general")
                     .num_columns(2)
                     .spacing([16.0, 8.0])
                     .show(ui, |ui| {
-                        ui.label("Primary display");
+                        ui.label("Основний дисплей");
                         let current =
                             display_name(&self.monitors, self.settings.general.display_screen);
                         egui::ComboBox::from_id_salt("settings-screen")
                             .selected_text(current)
                             .show_ui(ui, |ui| {
                                 if self.monitors.is_empty() {
-                                    ui.label("No monitors detected");
+                                    ui.label("Монітори не знайдено");
                                 }
                                 for (index, (x, y, width, height)) in
                                     self.monitors.iter().copied().enumerate()
@@ -34,7 +38,7 @@ impl App {
                                         &mut self.settings.general.display_screen,
                                         index as i32,
                                         format!(
-                                            "Display {} — {}×{} at ({}, {})",
+                                            "Дисплей {} — {}×{} у ({}, {})",
                                             index + 1,
                                             width,
                                             height,
@@ -46,36 +50,36 @@ impl App {
                             });
                         ui.end_row();
 
-                        ui.label("Secondary display");
+                        ui.label("Додатковий дисплей");
                         let mut screen2 = self.settings.general.display_screen2;
                         let second_text = if screen2 < 0 {
-                            "None".to_string()
+                            "Немає".to_string()
                         } else {
                             display_name(&self.monitors, screen2)
                         };
                         egui::ComboBox::from_id_salt("settings-screen2")
                             .selected_text(second_text)
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut screen2, -1, "None");
+                                ui.selectable_value(&mut screen2, -1, "Немає");
                                 for (index, _) in self.monitors.iter().enumerate() {
                                     ui.selectable_value(
                                         &mut screen2,
                                         index as i32,
-                                        format!("Display {}", index + 1),
+                                        format!("Дисплей {}", index + 1),
                                     );
                                 }
                             });
                         self.settings.general.display_screen2 = screen2;
                         ui.end_row();
 
-                        ui.label("Keep projector on top");
+                        ui.label("Проєктор поверх інших вікон");
                         ui.checkbox(
                             &mut self.settings.general.display_is_on_top,
-                            "Always on top",
+                            "Завжди поверх",
                         );
                         ui.end_row();
 
-                        ui.label("Theme");
+                        ui.label("Тема");
                         let theme_name = self
                             .theme_infos
                             .iter()
@@ -101,22 +105,22 @@ impl App {
                         }
                         ui.end_row();
 
-                        ui.label("Display controls");
+                        ui.label("Елементи керування");
                         let mut opacity = self.settings.general.display_controls.opacity;
                         ui.horizontal(|ui| {
-                            ui.add(egui::Slider::new(&mut opacity, 0.0..=1.0).text("Opacity"));
+                            ui.add(egui::Slider::new(&mut opacity, 0.0..=1.0).text("Прозорість"));
                         });
                         self.settings.general.display_controls.opacity = opacity;
                         ui.end_row();
                     });
 
                 ui.add_space(10.0);
-                ui.heading("Bible versions");
+                ui.heading("Версії Біблії");
                 egui::Grid::new("settings-bibles")
                     .num_columns(2)
                     .spacing([16.0, 8.0])
                     .show(ui, |ui| {
-                        ui.label("Primary version");
+                        ui.label("Основна версія");
                         bible_version_combo(
                             ui,
                             "bible-primary",
@@ -125,7 +129,7 @@ impl App {
                         );
                         ui.end_row();
 
-                        ui.label("Secondary version");
+                        ui.label("Додаткова версія");
                         bible_version_combo(
                             ui,
                             "bible-secondary",
@@ -134,7 +138,7 @@ impl App {
                         );
                         ui.end_row();
 
-                        ui.label("Trinary version");
+                        ui.label("Третя версія");
                         bible_version_combo(
                             ui,
                             "bible-trinary",
@@ -143,7 +147,7 @@ impl App {
                         );
                         ui.end_row();
 
-                        ui.label("Operator Bible");
+                        ui.label("Біблія оператора");
                         bible_version_combo(
                             ui,
                             "bible-operator",
@@ -154,72 +158,72 @@ impl App {
                     });
 
                 ui.add_space(10.0);
-                ui.heading("Slideshows and pictures");
+                ui.heading("Слайд-шоу та зображення");
                 egui::Grid::new("settings-pix")
                     .num_columns(2)
                     .spacing([16.0, 8.0])
                     .show(ui, |ui| {
-                        ui.label("Expand small pictures");
+                        ui.label("Збільшувати малі зображення");
                         ui.checkbox(&mut self.settings.slide_sets.expand_small, "");
                         ui.end_row();
 
-                        ui.label("Fit type");
+                        ui.label("Режим вписування");
                         egui::ComboBox::from_id_salt("settings-fit-type")
                             .selected_text(match self.settings.slide_sets.fit_type {
-                                1 => "Contain",
-                                2 => "Stretch",
-                                _ => "Cover",
+                                1 => "Вмістити",
+                                2 => "Розтягнути",
+                                _ => "Заповнити",
                             })
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.fit_type,
                                     0,
-                                    "Cover",
+                                    "Заповнити",
                                 );
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.fit_type,
                                     1,
-                                    "Contain",
+                                    "Вмістити",
                                 );
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.fit_type,
                                     2,
-                                    "Stretch",
+                                    "Розтягнути",
                                 );
                             });
                         ui.end_row();
 
-                        ui.label("Resize large pictures");
+                        ui.label("Зменшувати великі зображення");
                         ui.checkbox(&mut self.settings.slide_sets.resize, "");
                         ui.end_row();
 
-                        ui.label("Bound type");
+                        ui.label("Обмеження розміру");
                         egui::ComboBox::from_id_salt("settings-bound-type")
                             .selected_text(match self.settings.slide_sets.bound_type {
-                                0 => "Width",
-                                1 => "Height",
-                                _ => "Longest side",
+                                0 => "Ширина",
+                                1 => "Висота",
+                                _ => "Більша сторона",
                             })
                             .show_ui(ui, |ui| {
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.bound_type,
                                     0,
-                                    "Width",
+                                    "Ширина",
                                 );
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.bound_type,
                                     1,
-                                    "Height",
+                                    "Висота",
                                 );
                                 ui.selectable_value(
                                     &mut self.settings.slide_sets.bound_type,
                                     2,
-                                    "Longest side",
+                                    "Більша сторона",
                                 );
                             });
                         ui.end_row();
 
-                        ui.label("Maximum size");
+                        ui.label("Максимальний розмір");
                         ui.add(
                             egui::DragValue::new(&mut self.settings.slide_sets.bound_width)
                                 .range(320..=7680)
@@ -230,53 +234,140 @@ impl App {
 
                 ui.add_space(14.0);
                 ui.horizontal(|ui| {
-                    if ui.button("💾 Save settings").clicked() {
+                    if ui.button("💾 Зберегти налаштування").clicked() {
                         match self.settings.save(&self.db) {
-                            Ok(()) => self.set_status("Settings saved"),
-                            Err(err) => self.set_error("Could not save settings", err),
+                            Ok(()) => self.set_status("Налаштування збережено"),
+                            Err(err) => self.set_error("Не вдалося зберегти налаштування", err),
                         }
                     }
-                    if ui.button("↺ Reload saved settings").clicked() {
+                    if ui
+                        .button("↺ Перезавантажити збережені налаштування")
+                        .clicked()
+                    {
                         match sp_core::Settings::load(&self.db) {
                             Ok(settings) => {
                                 self.settings = settings;
-                                self.set_status("Settings reloaded");
+                                self.set_status("Налаштування перезавантажено");
                             }
-                            Err(err) => self.set_error("Could not reload settings", err),
+                            Err(err) => {
+                                self.set_error("Не вдалося перезавантажити налаштування", err)
+                            }
                         }
                     }
                 });
 
                 ui.add_space(16.0);
                 ui.separator();
-                ui.heading("Database");
+                ui.heading("База даних");
                 ui.label(RichText::new(self.db.path().display().to_string()).monospace());
                 ui.label(
                     RichText::new(format!(
-                        "Schema version {} — compatible with SoftProjector 2 spData.sqlite",
+                        "Версія схеми {} — сумісна з SoftProjector 2 spData.sqlite",
                         sp_core::DB_VERSION
                     ))
                     .weak(),
                 );
                 ui.horizontal(|ui| {
-                    if ui.button("Open data folder").clicked() {
+                    if ui.button("Відкрити теку даних").clicked() {
                         if let Some(parent) = self.db.path().parent() {
                             widgets::open_external(&parent.to_string_lossy());
                         }
                     }
                 });
+
+                ui.add_space(16.0);
+                ui.separator();
+                ui.heading("Оновлення");
+                ui.horizontal(|ui| {
+                    ui.label(format!(
+                        "Поточна версія: v{}",
+                        crate::updater::CURRENT_VERSION
+                    ));
+                    if ui
+                        .add_enabled(
+                            !self.update.checking && !self.update.downloading,
+                            egui::Button::new("Перевірити оновлення"),
+                        )
+                        .clicked()
+                    {
+                        check_update = true;
+                    }
+                    if self.update.checking {
+                        ui.spinner();
+                        ui.label("Перевірка...");
+                    }
+                });
+                if let Some(info) = self.update.info.clone() {
+                    ui.label(format!("Доступна версія: v{}", info.version));
+                    if !info.notes.trim().is_empty() {
+                        ui.collapsing("Що нового", |ui| {
+                            ui.label(RichText::new(info.notes.clone()).weak());
+                        });
+                    }
+                    ui.horizontal(|ui| {
+                        if self.update.downloading {
+                            ui.spinner();
+                            ui.label("Завантаження...");
+                        } else if self.update.ready.is_some() {
+                            if ui.button("Перезапустити та встановити").clicked()
+                            {
+                                install_update = true;
+                            }
+                        } else if ui.button("Завантажити оновлення").clicked() {
+                            download_update = true;
+                        }
+                        if ui.button("Відкрити реліз").clicked() {
+                            widgets::open_external(&info.page_url);
+                        }
+                    });
+                } else if self.update.checked
+                    && !self.update.checking
+                    && self.update.error.is_none()
+                {
+                    ui.label("У вас найновіша версія.");
+                }
+                if let Some(error) = self.update.error.clone() {
+                    ui.label(
+                        RichText::new(format!("Помилка оновлення: {error}"))
+                            .color(egui::Color32::LIGHT_RED),
+                    );
+                }
+                ui.label(
+                    RichText::new(
+                        "Автоматична перевірка оновлень виконується під час кожного запуску.",
+                    )
+                    .weak(),
+                );
             });
+
+        if check_update {
+            self.update.check_now();
+        }
+        if download_update {
+            self.update.download();
+        }
+        if install_update {
+            if let Some(path) = self.update.ready.clone() {
+                match crate::updater::launch_installer(&path) {
+                    Ok(()) => {
+                        self.projector_open = false;
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                    Err(error) => self.set_error("Не вдалося встановити оновлення", error),
+                }
+            }
+        }
     }
 }
 
 fn display_name(monitors: &[(i32, i32, i32, i32)], index: i32) -> String {
     if index < 0 {
-        return "None".into();
+        return "Немає".into();
     }
     monitors
         .get(index as usize)
-        .map(|(x, y, w, h)| format!("Display {} — {}×{} at ({}, {})", index + 1, w, h, x, y))
-        .unwrap_or_else(|| format!("Display {} (not detected)", index + 1))
+        .map(|(x, y, w, h)| format!("Дисплей {} — {}×{} у ({}, {})", index + 1, w, h, x, y))
+        .unwrap_or_else(|| format!("Дисплей {} (не знайдено)", index + 1))
 }
 
 fn bible_version_combo(
@@ -290,12 +381,12 @@ fn bible_version_combo(
         .iter()
         .find(|v| Some(v.id) == current_id)
         .map(|v| format!("{} ({})", v.name, v.abbreviation))
-        .unwrap_or_else(|| "None".into());
+        .unwrap_or_else(|| "Немає".into());
     egui::ComboBox::from_id_salt(id)
         .selected_text(label)
         .show_ui(ui, |ui| {
             if ui
-                .selectable_value(value, "none".to_string(), "None")
+                .selectable_value(value, "немає".to_string(), "Немає")
                 .clicked()
             {
                 return;

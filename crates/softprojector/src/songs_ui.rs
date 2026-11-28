@@ -5,7 +5,7 @@ use crate::project::{song_ending, Projected, TextStyle};
 use crate::widgets;
 use eframe::egui::{self, RichText};
 use sp_core::import_export::{export_songbook, import_songbook};
-use sp_core::song::CATEGORIES;
+use sp_core::song::CATEGORIES_UK;
 use sp_core::theme::Theme;
 use sp_core::{FontSpec, ScheduleItem, Song, Songbook};
 
@@ -17,22 +17,22 @@ pub struct SongEditor {
 impl App {
     pub fn songs_tab(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.heading("Songs");
-            if ui.button("➕ New song").clicked() {
+            ui.heading("Пісні");
+            if ui.button("➕ Нова пісня").clicked() {
                 self.new_song();
             }
-            if ui.button("📚 Songbooks...").clicked() {
+            if ui.button("📚 Збірники...").clicked() {
                 self.show_songbooks = true;
             }
-            if ui.button("Import songbook...").clicked() {
+            if ui.button("Імпортувати збірник...").clicked() {
                 self.import_songbook_dialog();
             }
             ui.separator();
             if let Some(song) = self.selected_song().cloned() {
-                if ui.button("▶ Project").clicked() {
+                if ui.button("▶ Проєктувати").clicked() {
                     self.project_song(&song, 0);
                 }
-                if ui.button("Add to schedule").clicked() {
+                if ui.button("Додати до розкладу").clicked() {
                     self.add_song_to_schedule(&song);
                 }
             }
@@ -40,35 +40,35 @@ impl App {
         ui.separator();
 
         ui.horizontal(|ui| {
-            ui.label("Search:");
+            ui.label("Пошук:");
             ui.add(
                 egui::TextEdit::singleline(&mut self.song_search)
                     .desired_width(220.0)
-                    .hint_text("title, number or text"),
+                    .hint_text("назва, номер або текст"),
             );
             if ui.button("✖").clicked() {
                 self.song_search.clear();
             }
             ui.separator();
-            ui.label("Songbook:");
+            ui.label("Збірник:");
             let selected_name = if self.songbook_filter == 0 {
-                "All songbooks".to_string()
+                "Усі збірники".to_string()
             } else {
                 self.songbooks
                     .iter()
                     .find(|b| b.id == self.songbook_filter)
                     .map(|b| b.name.clone())
-                    .unwrap_or_else(|| "All songbooks".into())
+                    .unwrap_or_else(|| "Усі збірники".into())
             };
             egui::ComboBox::from_id_salt("songbook-filter")
                 .selected_text(selected_name)
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.songbook_filter, 0, "All songbooks");
+                    ui.selectable_value(&mut self.songbook_filter, 0, "Усі збірники");
                     for book in &self.songbooks {
                         ui.selectable_value(&mut self.songbook_filter, book.id, &book.name);
                     }
                 });
-            ui.label(format!("{} songs", self.songs.len()));
+            ui.label(format!("Пісень: {}", self.songs.len()));
         });
 
         let query = self.song_search.trim().to_lowercase();
@@ -97,8 +97,10 @@ impl App {
                     .show(ui, |ui| {
                         if filtered.is_empty() {
                             ui.label(
-                                RichText::new("No songs. Create a song or import a songbook.")
-                                    .weak(),
+                                RichText::new(
+                                    "Пісень немає. Створіть пісню або імпортуйте збірник.",
+                                )
+                                .weak(),
                             );
                         }
                         for song in &filtered {
@@ -117,40 +119,40 @@ impl App {
 
             egui::Frame::group(&style).show(&mut columns[1], |ui| {
                 let Some(song) = self.selected_song().cloned() else {
-                    ui.label("Select a song to see its text.");
+                    ui.label("Виберіть пісню, щоб переглянути текст.");
                     return;
                 };
                 ui.horizontal(|ui| {
                     ui.heading(format!("{}  {}", song.number, song.title));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("🗑 Delete").clicked() {
+                        if ui.button("🗑 Видалити").clicked() {
                             match Song::delete(&self.db, song.song_id) {
                                 Ok(()) => {
                                     self.reload_songs();
-                                    self.set_status("Song deleted");
+                                    self.set_status("Пісню видалено");
                                 }
-                                Err(err) => self.set_error("Could not delete song", err),
+                                Err(err) => self.set_error("Не вдалося видалити пісню", err),
                             }
                         }
-                        if ui.button("✏ Edit").clicked() {
+                        if ui.button("✏ Редагувати").clicked() {
                             self.song_editor = Some(SongEditor {
                                 song: song.clone(),
                                 is_new: false,
                             });
                         }
-                        if ui.button("▶ Project").clicked() {
+                        if ui.button("▶ Проєктувати").clicked() {
                             self.project_song(&song, 0);
                         }
                     });
                 });
                 ui.label(format!(
-                    "Songbook: {}   Category: {}   Key/Tune: {}",
+                    "Збірник: {}   Категорія: {}   Тональність: {}",
                     if song.songbook_name.is_empty() {
                         "—"
                     } else {
                         &song.songbook_name
                     },
-                    song.category_name(),
+                    song.category_name_uk(),
                     if song.tune.is_empty() {
                         "—"
                     } else {
@@ -159,7 +161,7 @@ impl App {
                 ));
                 if !song.words_by.is_empty() || !song.music_by.is_empty() {
                     ui.label(format!(
-                        "Words: {}   Music: {}",
+                        "Слова: {}   Музика: {}",
                         song.words_by, song.music_by
                     ));
                 }
@@ -173,13 +175,13 @@ impl App {
 
     fn new_song(&mut self) {
         if self.songbooks.is_empty() {
-            match Songbook::add(&self.db, "Songs", "") {
+            match Songbook::add(&self.db, "Пісні", "") {
                 Ok(id) => {
                     self.songbook_filter = id;
                     self.reload_songs();
                 }
                 Err(err) => {
-                    self.set_error("Could not create songbook", err);
+                    self.set_error("Не вдалося створити збірник", err);
                     return;
                 }
             }
@@ -215,9 +217,9 @@ impl App {
         let mut cancel = false;
 
         egui::Window::new(if editor.is_new {
-            "New song"
+            "Нова пісня"
         } else {
-            "Edit song"
+            "Редагування пісні"
         })
         .open(&mut open)
         .default_width(760.0)
@@ -229,9 +231,9 @@ impl App {
                     .num_columns(4)
                     .spacing([10.0, 6.0])
                     .show(ui, |ui| {
-                        ui.label("Number");
+                        ui.label("Номер");
                         ui.add(egui::DragValue::new(&mut editor.song.number).range(1..=9999));
-                        ui.label("Songbook");
+                        ui.label("Збірник");
                         let book_name = self
                             .songbooks
                             .iter()
@@ -252,15 +254,15 @@ impl App {
                             });
                         ui.end_row();
 
-                        ui.label("Title");
+                        ui.label("Назва");
                         ui.add(
                             egui::TextEdit::singleline(&mut editor.song.title).desired_width(300.0),
                         );
-                        ui.label("Category");
+                        ui.label("Категорія");
                         egui::ComboBox::from_id_salt("song-category")
-                            .selected_text(editor.song.category_name())
+                            .selected_text(editor.song.category_name_uk())
                             .show_ui(ui, |ui| {
-                                for (index, name) in CATEGORIES.iter().enumerate() {
+                                for (index, name) in CATEGORIES_UK.iter().enumerate() {
                                     ui.selectable_value(
                                         &mut editor.song.category,
                                         index as i32,
@@ -270,11 +272,11 @@ impl App {
                             });
                         ui.end_row();
 
-                        ui.label("Tune / key");
+                        ui.label("Тональність");
                         ui.add(
                             egui::TextEdit::singleline(&mut editor.song.tune).desired_width(200.0),
                         );
-                        ui.label("Date");
+                        ui.label("Дата");
                         ui.add(
                             egui::TextEdit::singleline(&mut editor.song.date)
                                 .desired_width(120.0)
@@ -282,12 +284,12 @@ impl App {
                         );
                         ui.end_row();
 
-                        ui.label("Words by");
+                        ui.label("Слова");
                         ui.add(
                             egui::TextEdit::singleline(&mut editor.song.words_by)
                                 .desired_width(200.0),
                         );
-                        ui.label("Music by");
+                        ui.label("Музика");
                         ui.add(
                             egui::TextEdit::singleline(&mut editor.song.music_by)
                                 .desired_width(200.0),
@@ -296,7 +298,7 @@ impl App {
                     });
 
                 ui.add_space(6.0);
-                ui.label("Song text (use Verse / Chorus / Slide markers):");
+                ui.label("Текст пісні (використовуйте позначки «Куплет», «Приспів», «Слайд»):");
                 ui.add(
                     egui::TextEdit::multiline(&mut editor.song.song_text)
                         .desired_rows(16)
@@ -304,7 +306,7 @@ impl App {
                         .code_editor(),
                 );
                 ui.add_space(6.0);
-                ui.label("Notes:");
+                ui.label("Нотатки:");
                 ui.add(
                     egui::TextEdit::multiline(&mut editor.song.notes)
                         .desired_rows(3)
@@ -312,47 +314,50 @@ impl App {
                 );
 
                 ui.add_space(6.0);
-                ui.collapsing("Private display settings", |ui| {
-                    ui.checkbox(
-                        &mut editor.song.use_private_settings,
-                        "Use private display settings for this song",
-                    );
-                    widgets::font_edit(ui, "Text font", &mut editor.song.font);
-                    widgets::color_edit(ui, "Text color", &mut editor.song.color);
-                    widgets::alignment_edit(
-                        ui,
-                        "Horizontal alignment",
-                        &mut editor.song.alignment_h,
-                        false,
-                    );
-                    widgets::alignment_edit(
-                        ui,
-                        "Vertical alignment",
-                        &mut editor.song.alignment_v,
-                        true,
-                    );
-                    widgets::font_edit(ui, "Info font", &mut editor.song.info_font);
-                    widgets::color_edit(ui, "Info color", &mut editor.song.info_color);
-                    widgets::font_edit(ui, "Ending font", &mut editor.song.ending_font);
-                    widgets::color_edit(ui, "Ending color", &mut editor.song.ending_color);
-                    widgets::background_edit(
-                        ui,
-                        &mut editor.song.use_background,
-                        &mut editor.song.background_name,
-                        &mut editor.song.background,
-                    );
-                });
+                ui.collapsing(
+                    "Особисті налаштування показу",
+                    |ui| {
+                        ui.checkbox(
+                            &mut editor.song.use_private_settings,
+                            "Використовувати особисті налаштування показу для цієї пісні",
+                        );
+                        widgets::font_edit(ui, "Шрифт тексту", &mut editor.song.font);
+                        widgets::color_edit(ui, "Колір тексту", &mut editor.song.color);
+                        widgets::alignment_edit(
+                            ui,
+                            "Горизонтальне вирівнювання",
+                            &mut editor.song.alignment_h,
+                            false,
+                        );
+                        widgets::alignment_edit(
+                            ui,
+                            "Вертикальне вирівнювання",
+                            &mut editor.song.alignment_v,
+                            true,
+                        );
+                        widgets::font_edit(ui, "Шрифт інформації", &mut editor.song.info_font);
+                        widgets::color_edit(ui, "Колір інформації", &mut editor.song.info_color);
+                        widgets::font_edit(ui, "Шрифт закінчення", &mut editor.song.ending_font);
+                        widgets::color_edit(ui, "Колір закінчення", &mut editor.song.ending_color);
+                        widgets::background_edit(
+                            ui,
+                            &mut editor.song.use_background,
+                            &mut editor.song.background_name,
+                            &mut editor.song.background,
+                        );
+                    },
+                );
             });
 
             ui.separator();
             ui.horizontal(|ui| {
-                if ui.button("💾 Save").clicked() {
+                if ui.button("💾 Зберегти").clicked() {
                     save = true;
                 }
-                if ui.button("Cancel").clicked() {
+                if ui.button("Скасувати").clicked() {
                     cancel = true;
                 }
-                if !editor.is_new && ui.button("🗑 Delete").clicked() {
+                if !editor.is_new && ui.button("🗑 Видалити").clicked() {
                     delete = true;
                 }
             });
@@ -366,9 +371,9 @@ impl App {
             match Song::delete(&self.db, editor.song.song_id) {
                 Ok(()) => {
                     self.reload_songs();
-                    self.set_status("Song deleted");
+                    self.set_status("Пісню видалено");
                 }
-                Err(err) => self.set_error("Could not delete song", err),
+                Err(err) => self.set_error("Не вдалося видалити пісню", err),
             }
             return;
         }
@@ -379,10 +384,10 @@ impl App {
                     let id = editor.song.song_id;
                     self.selected_song = id;
                     self.reload_songs();
-                    self.set_status("Song saved");
+                    self.set_status("Пісню збережено");
                 }
                 Err(err) => {
-                    self.set_error("Could not save song", err);
+                    self.set_error("Не вдалося зберегти пісню", err);
                     self.song_editor = Some(editor);
                     return;
                 }
@@ -403,7 +408,7 @@ impl App {
     pub fn add_song_to_schedule(&mut self, song: &Song) {
         self.schedule.push(ScheduleItem::from_song(song.clone()));
         self.selected_schedule = self.schedule.len().saturating_sub(1);
-        self.set_status(format!("Added “{}” to schedule", song.title));
+        self.set_status(format!("«{}» додано до розкладу", song.title));
     }
 
     pub fn songbook_window(&mut self, ctx: &egui::Context) {
@@ -411,7 +416,7 @@ impl App {
             return;
         }
         let mut open = self.show_songbooks;
-        egui::Window::new("Songbooks")
+        egui::Window::new("Збірники")
             .open(&mut open)
             .default_width(560.0)
             .show(ctx, |ui| {
@@ -422,24 +427,26 @@ impl App {
                             ui.horizontal(|ui| {
                                 ui.label(RichText::new(&book.name).strong());
                                 ui.label(
-                                    RichText::new(format!("({} songs)", self.count_songs(book.id)))
-                                        .weak(),
+                                    RichText::new(format!(
+                                        "({} пісень)",
+                                        self.count_songs(book.id)
+                                    ))
+                                    .weak(),
                                 );
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
-                                        if ui.small_button("Delete").clicked() {
+                                        if ui.small_button("Видалити").clicked() {
                                             match Songbook::delete(&self.db, book.id) {
                                                 Ok(()) => {
                                                     self.reload_songs();
-                                                    self.set_status("Songbook deleted");
+                                                    self.set_status("Збірник видалено");
                                                 }
-                                                Err(err) => {
-                                                    self.set_error("Could not delete songbook", err)
-                                                }
+                                                Err(err) => self
+                                                    .set_error("Не вдалося видалити збірник", err),
                                             }
                                         }
-                                        if ui.small_button("Edit").clicked() {
+                                        if ui.small_button("Редагувати").clicked() {
                                             self.songbook_edit = Some((
                                                 book.id,
                                                 book.name.clone(),
@@ -454,47 +461,47 @@ impl App {
 
                 if let Some((id, name, info)) = self.songbook_edit.clone() {
                     ui.separator();
-                    ui.label("Edit songbook");
+                    ui.label("Редагування збірника");
                     let mut edit = (name, info);
                     ui.horizontal(|ui| {
-                        ui.label("Name");
+                        ui.label("Назва");
                         ui.text_edit_singleline(&mut edit.0);
                     });
                     ui.horizontal(|ui| {
-                        ui.label("Info");
+                        ui.label("Інформація");
                         ui.text_edit_multiline(&mut edit.1);
                     });
                     ui.horizontal(|ui| {
-                        if ui.button("Save").clicked() {
+                        if ui.button("Зберегти").clicked() {
                             match Songbook::update(&self.db, id, &edit.0, &edit.1) {
                                 Ok(()) => {
                                     self.songbook_edit = None;
                                     self.reload_songs();
-                                    self.set_status("Songbook saved");
+                                    self.set_status("Збірник збережено");
                                 }
-                                Err(err) => self.set_error("Could not save songbook", err),
+                                Err(err) => self.set_error("Не вдалося зберегти збірник", err),
                             }
                         }
-                        if ui.button("Cancel").clicked() {
+                        if ui.button("Скасувати").clicked() {
                             self.songbook_edit = None;
                         }
                     });
                 }
 
                 ui.separator();
-                ui.label("New songbook");
+                ui.label("Новий збірник");
                 egui::Grid::new("new-songbook")
                     .num_columns(2)
                     .show(ui, |ui| {
-                        ui.label("Name");
+                        ui.label("Назва");
                         ui.text_edit_singleline(&mut self.new_songbook_name);
                         ui.end_row();
-                        ui.label("Info");
+                        ui.label("Інформація");
                         ui.text_edit_singleline(&mut self.new_songbook_info);
                         ui.end_row();
                     });
                 ui.horizontal(|ui| {
-                    if ui.button("Add songbook").clicked() {
+                    if ui.button("Додати збірник").clicked() {
                         match Songbook::add(
                             &self.db,
                             &self.new_songbook_name,
@@ -504,15 +511,15 @@ impl App {
                                 self.new_songbook_name.clear();
                                 self.new_songbook_info.clear();
                                 self.reload_songs();
-                                self.set_status("Songbook created");
+                                self.set_status("Збірник створено");
                             }
-                            Err(err) => self.set_error("Could not create songbook", err),
+                            Err(err) => self.set_error("Не вдалося створити збірник", err),
                         }
                     }
-                    if ui.button("Import...").clicked() {
+                    if ui.button("Імпортувати...").clicked() {
                         self.import_songbook_dialog();
                     }
-                    if ui.button("Export selected...").clicked() {
+                    if ui.button("Експортувати вибране...").clicked() {
                         self.export_songbook_dialog();
                     }
                 });
@@ -529,8 +536,8 @@ impl App {
 
     pub fn import_songbook_dialog(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector songbook", &["sps", "spb", "xml", "txt"])
-            .add_filter("All files", &["*"])
+            .add_filter("Збірник SoftProjector", &["sps", "spb", "xml", "txt"])
+            .add_filter("Усі файли", &["*"])
             .pick_file()
         else {
             return;
@@ -539,9 +546,9 @@ impl App {
             Ok(id) => {
                 self.reload_songs();
                 self.songbook_filter = id;
-                self.set_status(format!("Imported songbook {}", path.display()));
+                self.set_status(format!("Імпортовано збірник {}", path.display()));
             }
-            Err(err) => self.set_error("Could not import songbook", err),
+            Err(err) => self.set_error("Не вдалося імпортувати збірник", err),
         }
     }
 
@@ -552,7 +559,7 @@ impl App {
             self.songbooks.first().map(|b| b.id).unwrap_or(0)
         };
         if id == 0 {
-            self.set_error("Could not export songbook", "there are no songbooks");
+            self.set_error("Не вдалося експортувати збірник", "немає жодного збірника");
             return;
         }
         let default_name = self
@@ -562,15 +569,15 @@ impl App {
             .map(|b| format!("{}.sps", b.name))
             .unwrap_or_else(|| "songbook.sps".into());
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("SoftProjector songbook", &["sps"])
+            .add_filter("Збірник SoftProjector", &["sps"])
             .set_file_name(default_name)
             .save_file()
         else {
             return;
         };
         match export_songbook(&self.db, id, &path) {
-            Ok(()) => self.set_status(format!("Exported songbook to {}", path.display())),
-            Err(err) => self.set_error("Could not export songbook", err),
+            Ok(()) => self.set_status(format!("Збірник експортовано до {}", path.display())),
+            Err(err) => self.set_error("Не вдалося експортувати збірник", err),
         }
     }
 }
@@ -682,7 +689,7 @@ pub fn build_song_slides(theme: &Theme, song: &Song) -> Vec<Projected> {
             corner_right,
             ending,
             style: style.clone(),
-            label: format!("{} — stanza {} of {}", song.title, index + 1, count),
+            label: format!("{} — куплет {} з {}", song.title, index + 1, count),
         }));
     }
 
