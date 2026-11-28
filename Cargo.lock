@@ -2569,7 +2569,7 @@ dependencies = [
 
 [[package]]
 name = "softprojector"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "eframe",
@@ -2586,7 +2586,7 @@ dependencies = [
 
 [[package]]
 name = "sp-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "quick-xml 0.36.2",

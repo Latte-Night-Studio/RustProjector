@@ -309,7 +309,12 @@ impl App {
                             ui.spinner();
                             ui.label("Завантаження...");
                         } else if self.update.ready.is_some() {
-                            if ui.button("Перезапустити та встановити").clicked()
+                            if ui
+                                .add_enabled(
+                                    self.update.can_install(),
+                                    egui::Button::new("Перезапустити та встановити"),
+                                )
+                                .clicked()
                             {
                                 install_update = true;
                             }

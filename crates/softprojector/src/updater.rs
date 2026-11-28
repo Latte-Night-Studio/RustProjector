@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const REPO: &str = "Latte-Night-Studio/RustProjector";
 const USER_AGENT: &str = concat!("RustProjector/", env!("CARGO_PKG_VERSION"));
@@ -39,6 +39,10 @@ pub struct UpdateState {
     pub checking: bool,
     pub downloading: bool,
     pub ready: Option<PathBuf>,
+    /// When the download finished.  The install button stays disabled for a
+    /// moment so that the mouse release which started the download cannot
+    /// also trigger the installation.
+    pub ready_at: Option<Instant>,
     /// True after at least one check has finished (successfully or not).
     pub checked: bool,
     /// True when the user hid the update banner for this version.
@@ -85,6 +89,7 @@ impl UpdateState {
         self.downloading = true;
         self.error = None;
         self.ready = None;
+        self.ready_at = None;
         self.dismissed = false;
         self.silent = false;
         let (sender, receiver) = mpsc::channel();
@@ -138,12 +143,24 @@ impl UpdateState {
                 match result {
                     Ok(path) => {
                         self.ready = Some(path);
+                        self.ready_at = Some(Instant::now());
                         self.error = None;
                     }
                     Err(error) => self.error = Some(error),
                 }
             }
         }
+    }
+
+    /// True once a staged update has been available long enough for a
+    /// deliberate click.  This prevents the release of the click that started
+    /// the download from also activating the install button that appears in
+    /// the same place.
+    pub fn can_install(&self) -> bool {
+        self.ready.is_some()
+            && self
+                .ready_at
+                .is_some_and(|at| at.elapsed() >= Duration::from_millis(600))
     }
 }
 
@@ -441,6 +458,18 @@ mod tests {
             hex_sha256(b"abc"),
             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         );
+    }
+
+    #[test]
+    fn debounces_install_button() {
+        let mut state = UpdateState::default();
+        assert!(!state.can_install());
+
+        state.ready = Some(PathBuf::from("softprojector.exe"));
+        assert!(!state.can_install());
+
+        state.ready_at = Some(Instant::now() - Duration::from_secs(1));
+        assert!(state.can_install());
     }
 
     #[test]

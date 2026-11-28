@@ -11,11 +11,11 @@ The application interface is in Ukrainian. The project is a Cargo workspace:
 
 ## Встановлення (Windows)
 
-1. Відкрийте [останній реліз](https://github.com/Latte-Night-Studio/RustProjector/releases/latest) і завантажте `RustProjector-v0.2.0-windows-x64-setup.exe`.
+1. Відкрийте [останній реліз](https://github.com/Latte-Night-Studio/RustProjector/releases/latest) і завантажте інсталятор `...-windows-x64-setup.exe`.
 2. Запустіть інсталятор. Він встановлює програму лише для поточного користувача в `%LOCALAPPDATA%\Programs\RustProjector`, тому права адміністратора не потрібні.
 3. Ярлики створюються в меню «Пуск» (за бажанням — на робочому столі). База даних `spData.sqlite` зберігається в теці встановлення; під час видалення програми її можна залишити.
 
-Портативний варіант: розпакуйте `RustProjector-v0.2.0-windows-x64.zip` у будь-яку теку та запустіть `softprojector.exe`.
+Портативний варіант: розпакуйте архів `...-windows-x64.zip` у будь-яку теку та запустіть `softprojector.exe`.
 
 ### Автоматичне оновлення
 
@@ -23,7 +23,7 @@ The application interface is in Ukrainian. The project is a Cargo workspace:
 - Коли доступна нова версія, унизу вікна з'являється смуга з кнопкою «Оновити». Оновлення також можна перевірити вручну на вкладці «Налаштування».
 - Архів оновлення завантажується, перевіряється за SHA-256 із релізу, після чого програма перезапускається вже з новою версією.
 - Для встановлених версій оновлення не потребує прав адміністратора. Якщо програму запущено з теки, доступної лише для читання, буде запропоновано підвищення прав.
-- Версія 0.1.0 не містить засобу оновлення, тому перехід на 0.2.0 виконується один раз вручну.
+- Версія 0.1.0 не містить засобу оновлення, тому перехід на новішу версію виконується один раз вручну.
 
 > Інсталятор і програма наразі не підписані цифровим сертифікатом, тому Windows SmartScreen може показати попередження. Перевірити завантажений файл можна за допомогою файлу `.sha256` із релізу.
 
@@ -62,7 +62,7 @@ The application binary is written to `target/release/softprojector.exe`.
 To build the installer, download [NSIS 3.11](https://nsis.sourceforge.io/Download) (portable zip is enough) and run:
 
 ```powershell
-.\installer\build-installer.ps1 -Version 0.2.0 -NsisDir C:\Tools\nsis-3.11
+.\installer\build-installer.ps1 -Version 0.2.1 -NsisDir C:\Tools\nsis-3.11
 ```
 
 The installer and its SHA-256 file are written to `dist\`. The script accepts `-SourceExe` and `-OutputDir` for custom builds.

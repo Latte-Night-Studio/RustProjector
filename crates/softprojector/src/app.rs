@@ -589,7 +589,13 @@ impl App {
                         egui::RichText::new("Оновлення завантажено.")
                             .color(egui::Color32::LIGHT_GREEN),
                     );
-                    if ui.button("Перезапустити та встановити").clicked() {
+                    if ui
+                        .add_enabled(
+                            self.update.can_install(),
+                            egui::Button::new("Перезапустити та встановити"),
+                        )
+                        .clicked()
+                    {
                         install = true;
                     }
                     if ui.button("Пізніше").clicked() {
@@ -766,6 +772,14 @@ impl eframe::App for App {
         self.poll_auto_advance(ctx.input(|i| i.time));
         self.poll_video();
         self.update.poll();
+        if self.update.checking
+            || self.update.downloading
+            || (self.update.ready.is_some() && !self.update.can_install())
+        {
+            // Keep the spinner moving and switch the banner as soon as the
+            // background work finishes, even when the mouse is idle.
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
         self.ensure_bible_session();
         self.ensure_slideshow_loaded();
 
